@@ -1,0 +1,26 @@
+server:
+  port: 8420
+  forward-headers-strategy: framework
+spring:
+  application:
+    name: nekowindow-service-encode
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/nekowindow_encode
+    username: root
+    password: test
+
+s3:
+  access-key: user
+  secret-key: password
+  endpoint: http://localhost:9000
+
+springdoc:
+  swagger-ui:
+    path: "/swagger/encode/swagger-ui.html"
+  api-docs:
+    path: "/swagger/encode/api-docs"

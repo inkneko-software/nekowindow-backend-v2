@@ -19,11 +19,20 @@ public class GatewayAuthUtils {
         return auth(request);
     }
 
+    public static Long auth(Boolean throwsException){
+        ServletRequestAttributes requestAttributes = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes());
+        HttpServletRequest request = null;
+        if (requestAttributes != null){
+            request = requestAttributes.getRequest();
+        }
+        return auth(request, false);
+    }
+
     public static Long auth(HttpServletRequest request){
         return auth(request, true);
     }
 
-    public static Long auth(HttpServletRequest request, Boolean throwException){
+    public static Long auth(HttpServletRequest request, Boolean throwsException){
         if (request != null){
             String userId = request.getHeader(HEADER_USER_ID);
             if (userId != null){
@@ -33,7 +42,7 @@ public class GatewayAuthUtils {
             }
         }
 
-        if (throwException){
+        if (throwsException){
             throw new ServiceException(403, "当前未登录，未获取到用户信息");
         }
         return null;
