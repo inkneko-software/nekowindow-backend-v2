@@ -3,6 +3,7 @@ package com.inkneko.nekowindow.video.service;
 import com.inkneko.nekowindow.video.dto.CreateVideoPostDto;
 import com.inkneko.nekowindow.video.entity.PartitionInfo;
 import com.inkneko.nekowindow.video.entity.PartitionRecommendTag;
+import com.inkneko.nekowindow.video.entity.VideoPost;
 import com.inkneko.nekowindow.video.vo.CreateVideoPostVO;
 import com.inkneko.nekowindow.video.vo.VideoHelloWorldCardVO;
 import com.inkneko.nekowindow.video.vo.VideoPostBriefVO;
@@ -27,6 +28,15 @@ public interface VideoService {
      * @return
      */
     VideoPostBriefVO getVideoPost(Long nkid);
+
+    /**
+     * 获取指定用户的上传视频
+     * @param uid 用户id
+     * @param page 页数
+     * @param size 页面大小
+     * @return 用户已上传的视频列表，以时间倒序
+     */
+    List<VideoPost> getUploadedVideoPosts(Long uid, Long page, Long size);
 
     /**
      * 查询视频详细信息

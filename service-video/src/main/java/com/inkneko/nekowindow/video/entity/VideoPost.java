@@ -22,6 +22,7 @@ public class VideoPost {
     String description;
     Integer state;
     Integer partitionId;
+    String partitionName;
     String reviewFailedReason;
     Date createdAt;
 }

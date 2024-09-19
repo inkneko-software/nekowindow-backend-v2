@@ -16,6 +16,7 @@ import com.inkneko.nekowindow.video.mapper.*;
 import com.inkneko.nekowindow.video.service.VideoService;
 import com.inkneko.nekowindow.video.vo.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -68,6 +69,7 @@ public class VideoServiceImpl implements VideoService {
      * @return
      */
     @Override
+    @Transactional
     public CreateVideoPostVO createVideoPost(CreateVideoPostDto dto, Long userId) {
         //视频文件与封面文件来源校验
         Pattern pattern = Pattern.compile(ossEndpointConfig.endpoint + "/(.+?)/upload/(video|cover)/(.+?)");
@@ -101,6 +103,12 @@ public class VideoServiceImpl implements VideoService {
             tagSet.add(tag.strip());
         }
 
+        //检查分区
+        PartitionInfo partitionInfo =  partitionInfoMapper.selectById(dto.getPartitionId());
+        if (partitionInfo == null){
+            throw new ServiceException(400, "指定分区不存在");
+        }
+
         //创建稿件
         VideoPost videoPost = new VideoPost();
         videoPost.setTitle(dto.getTitle());
@@ -108,6 +116,7 @@ public class VideoServiceImpl implements VideoService {
         videoPost.setDescription(dto.getDescription());
         videoPost.setCoverUrl(dto.getCoverUrl());
         videoPost.setPartitionId(dto.getPartitionId());
+        videoPost.setPartitionName(partitionInfo.getPartitionName());
         videoPost.setState(0);
         videoPostMapper.insert(videoPost);
         //保存视频标签
@@ -157,15 +166,30 @@ public class VideoServiceImpl implements VideoService {
         List<VideoPostVideosVO> videosVos = videoPostResourceMapper.selectList(new LambdaQueryWrapper<VideoPostVideos>().eq(VideoPostVideos::getNkid, post.getNkid()))
                 .stream()
                 .map(videoPostVideos -> new VideoPostVideosVO(videoPostVideos.getVideoId(), videoPostVideos.getTitle(), videoPostVideos.getVisit(), videoPostVideos.getSourceVideoUrl()))
-                .collect(Collectors.toList());
+                .toList();
 
         return new VideoPostBriefVO(
+                post.getNkid(),
                 post.getTitle(),
                 post.getDescription(),
                 uploadUserVo,
                 tags,
                 post.getCreatedAt()
         );
+    }
+
+    /**
+     * 获取指定用户的上传视频
+     *
+     * @param uid  用户id
+     * @param page 页数
+     * @param size 页面大小
+     * @return 用户已上传的视频列表，以时间倒序
+     */
+    @Override
+    public List<VideoPost> getUploadedVideoPosts(Long uid, Long page, Long size) {
+        IPage<VideoPost> selectPage = videoPostMapper.selectPage(new Page<>(page, size), new LambdaQueryWrapper<VideoPost>().eq(VideoPost::getUid, uid).orderByDesc(VideoPost::getCreatedAt));
+        return selectPage.getRecords();
     }
 
     /**
@@ -213,10 +237,10 @@ public class VideoServiceImpl implements VideoService {
                 .selectList(new LambdaQueryWrapper<VideoPost>().eq(VideoPost::getPartitionId, partitionId).last("LIMIT 10"))
                 .stream()
                 .map(videoPost -> {
-                    UserVo userVo =  userFeignClient.get(videoPost.getUid());
+                    UserVo userVo = userFeignClient.get(videoPost.getUid());
                     UploadUserVO uploadUserVO = new UploadUserVO(userVo.getUsername(), userVo.getUid(), userVo.getSign(), userVo.getFans(), userVo.getAvatarUrl());
                     List<String> tags = postTagMapper.selectList(new LambdaQueryWrapper<PostTag>().eq(PostTag::getNkid, videoPost.getNkid())).stream().map(PostTag::getTagName).toList();
-                    return new VideoPostBriefVO(videoPost.getTitle(), videoPost.getDescription(), uploadUserVO, tags, videoPost.getCreatedAt());
+                    return new VideoPostBriefVO(videoPost.getNkid(), videoPost.getTitle(), videoPost.getDescription(), uploadUserVO, tags, videoPost.getCreatedAt());
                 })
                 .collect(Collectors.toList());
     }
@@ -234,11 +258,12 @@ public class VideoServiceImpl implements VideoService {
         IPage<VideoPost> videoPostPage = videoPostMapper.selectPage(new Page<>(page, size), new LambdaQueryWrapper<VideoPost>().eq(VideoPost::getPartitionId, partitionId));
         List<VideoPost> videoPosts = videoPostPage.getRecords();
         List<VideoPostBriefVO> result = new ArrayList<>();
-        for(VideoPost videoPost : videoPosts){
+        for (VideoPost videoPost : videoPosts) {
             UserVo userVo = userFeignClient.get(videoPost.getUid());
             UploadUserVO uploader = new UploadUserVO(userVo.getUsername(), userVo.getUid(), userVo.getSign(), userVo.getFans(), userVo.getAvatarUrl());
             List<String> tags = postTagMapper.selectList(new LambdaQueryWrapper<PostTag>().eq(PostTag::getNkid, videoPost.getNkid())).stream().map(PostTag::getTagName).toList();
             result.add(new VideoPostBriefVO(
+                    videoPost.getNkid(),
                     videoPost.getTitle(),
                     videoPost.getDescription(),
                     uploader,
