@@ -11,7 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class VideoPostBriefVO {
-
+    private Long nkid;
     private String title;
     private String description;
     private UploadUserVO uploader;
