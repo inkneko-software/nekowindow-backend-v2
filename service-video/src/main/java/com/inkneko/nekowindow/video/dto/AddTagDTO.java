@@ -1,6 +1,5 @@
 package com.inkneko.nekowindow.video.dto;
 
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -11,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class AddTagDto {
+public class AddTagDTO {
     @NotNull(message = "分区id不能为空")
     private Integer partitionId;
 

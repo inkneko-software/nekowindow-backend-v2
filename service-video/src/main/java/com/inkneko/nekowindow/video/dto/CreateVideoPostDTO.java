@@ -12,7 +12,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateVideoPostDto {
+public class CreateVideoPostDTO {
     @Size(min = 1, max = 200, message = "标题长度不符合要求，请设置在1到200个字符之间")
     String title;
 
