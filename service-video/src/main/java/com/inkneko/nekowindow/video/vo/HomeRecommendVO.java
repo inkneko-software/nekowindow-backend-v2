@@ -13,18 +13,18 @@ import java.util.List;
 @NoArgsConstructor
 public class HomeRecommendVO {
 
-    @Schema(description = "海报列表")
+    @Schema(description = "海报列表", requiredMode = Schema.RequiredMode.REQUIRED)
     List<PosterVO> posters;
 
-    @Schema(description = "全站视频推荐")
+    @Schema(description = "全站视频推荐", requiredMode = Schema.RequiredMode.REQUIRED)
     List<VideoPostBriefVO> recommendVideos;
 
-    @Schema(description = "热销商品列表")
+    @Schema(description = "热销商品列表", requiredMode = Schema.RequiredMode.REQUIRED)
     List<String> popularMerchants;
 
-    @Schema(description = "分区列表")
+    @Schema(description = "分区列表", requiredMode = Schema.RequiredMode.REQUIRED)
     List<PartitionInfo> partitions;
 
-    @Schema(description = "对应分区的热门视频推荐列表（每个分区最多10个推荐视频）")
+    @Schema(description = "对应分区的热门视频推荐列表（每个分区最多10个推荐视频）", requiredMode = Schema.RequiredMode.REQUIRED)
     List<List<VideoPostBriefVO>> partitionVideos;
 }

@@ -1,5 +1,6 @@
 package com.inkneko.nekowindow.video.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,8 +9,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class VideoPostVideosVO {
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private Long videoId;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String title;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer visit;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String dashMpdUrl;
 }

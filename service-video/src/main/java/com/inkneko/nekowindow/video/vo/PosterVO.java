@@ -9,12 +9,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PosterVO {
-    @Schema(description = "海报描述")
+    @Schema(description = "海报描述", requiredMode = Schema.RequiredMode.REQUIRED)
     private String description;
 
-    @Schema(description = "海报图片")
+    @Schema(description = "海报图片", requiredMode = Schema.RequiredMode.REQUIRED)
     private String imageURL;
 
-    @Schema(description = "活动跳转链接")
+    @Schema(description = "活动跳转链接", requiredMode = Schema.RequiredMode.REQUIRED)
     private String activityURL;
 }
