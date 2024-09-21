@@ -1,11 +1,11 @@
 package com.inkneko.nekowindow.video.service;
 
-import com.inkneko.nekowindow.video.dto.CreateVideoPostDto;
+import com.inkneko.nekowindow.video.dto.CreateVideoPostDTO;
+import com.inkneko.nekowindow.video.dto.UpdatePostBriefDTO;
 import com.inkneko.nekowindow.video.entity.PartitionInfo;
 import com.inkneko.nekowindow.video.entity.PartitionRecommendTag;
 import com.inkneko.nekowindow.video.entity.VideoPost;
 import com.inkneko.nekowindow.video.vo.CreateVideoPostVO;
-import com.inkneko.nekowindow.video.vo.VideoHelloWorldCardVO;
 import com.inkneko.nekowindow.video.vo.VideoPostBriefVO;
 import com.inkneko.nekowindow.video.vo.VideoPostDetailVO;
 
@@ -20,7 +20,7 @@ public interface VideoService {
      * @param userId 上传者
      * @return
      */
-    CreateVideoPostVO createVideoPost(CreateVideoPostDto dto, Long userId);
+    CreateVideoPostVO createVideoPost(CreateVideoPostDTO dto, Long userId);
 
     /**
      * 查询视频投稿
@@ -74,5 +74,12 @@ public interface VideoService {
      * @return 视频列表
      */
     List<VideoPostBriefVO> getPartitionVideos(Integer partitionId, Long page, Long size);
+
+    /**
+     * 更新视频信息
+     * @param dto 更新数据，见{@link UpdatePostBriefDTO}
+     * @param uid 发起者用户uid
+     */
+    void updatePostBrief(UpdatePostBriefDTO dto, Long uid);
 
 }

@@ -10,7 +10,8 @@ import com.inkneko.nekowindow.api.user.client.UserFeignClient;
 import com.inkneko.nekowindow.api.user.vo.UserVo;
 import com.inkneko.nekowindow.common.ServiceException;
 import com.inkneko.nekowindow.video.config.OssEndpointConfig;
-import com.inkneko.nekowindow.video.dto.CreateVideoPostDto;
+import com.inkneko.nekowindow.video.dto.CreateVideoPostDTO;
+import com.inkneko.nekowindow.video.dto.UpdatePostBriefDTO;
 import com.inkneko.nekowindow.video.entity.*;
 import com.inkneko.nekowindow.video.mapper.*;
 import com.inkneko.nekowindow.video.service.VideoService;
@@ -62,6 +63,52 @@ public class VideoServiceImpl implements VideoService {
     }
 
     /**
+     * 检查用户提供的视频URL是否为站内资源，并且是上传者
+     * @param url 视频的文件URL
+     * @param userId 用户id
+     * @return 若文件为站内资源，且userId为该文件的上传者，返回false，否则返回true
+     */
+    private boolean isVideoUrlInvalid(String url, Long userId){
+        //检查链接是否为站内资源
+        Pattern pattern = Pattern.compile(ossEndpointConfig.endpoint + "/nekowindow/upload/video/(.+?)");
+        Matcher matcher = pattern.matcher(url);
+        if (!matcher.matches()){
+            return false;
+        }
+        //检查是否存在
+        String videoObjectKey = matcher.group(1);
+        UploadRecordVO videoUploadRecordVO = ossFeignClient.isObjectExists("nekowindow", "upload/video/" + videoObjectKey).getData();
+        if (videoUploadRecordVO == null){
+            return false;
+        }
+        //检查是否为上传者
+        return !videoUploadRecordVO.getUid().equals(userId);
+    }
+
+    /**
+     * 检查用户提供的封面URL是否为站内资源，并且是上传者
+     * @param url 封面图片的文件URL
+     * @param userId 用户id
+     * @return 若文件为站内资源，且userId为该文件的上传者，返回false，否则返回true
+     */
+    private boolean isCoverUrlInvalid(String url, Long userId){
+        //检查链接是否为站内资源
+        Pattern pattern = Pattern.compile(ossEndpointConfig.endpoint + "/nekowindow/upload/cover/(.+?)");
+        Matcher matcher = pattern.matcher(url);
+        if (!matcher.matches()){
+            return false;
+        }
+        //检查是否存在
+        String coverObjectKey = matcher.group(1);
+        UploadRecordVO coverUploadRecordVO = ossFeignClient.isObjectExists("nekowindow", "upload/cover/" + coverObjectKey).getData();
+        if (coverUploadRecordVO == null){
+            return false;
+        }
+        //检查是否为上传者
+        return !coverUploadRecordVO.getUid().equals(userId);
+    }
+
+    /**
      * 视频投稿
      *
      * @param dto    视频信息
@@ -70,30 +117,13 @@ public class VideoServiceImpl implements VideoService {
      */
     @Override
     @Transactional
-    public CreateVideoPostVO createVideoPost(CreateVideoPostDto dto, Long userId) {
-        //视频文件与封面文件来源校验
-        Pattern pattern = Pattern.compile(ossEndpointConfig.endpoint + "/(.+?)/upload/(video|cover)/(.+?)");
-        Matcher videoUrlMatcher = pattern.matcher(dto.getVideoUrl());
-        Matcher coverUrlMatcher = pattern.matcher(dto.getCoverUrl());
-        if (!videoUrlMatcher.matches() || !coverUrlMatcher.matches()) {
-            throw new ServiceException(400, "请使用本服务提供的上传途径");
-        }
-        //确保使用的是nekowindow桶
-        if (!videoUrlMatcher.group(1).equals("nekowindow") || !coverUrlMatcher.group(1).equals("nekowindow")) {
-            throw new ServiceException(400, "请使用正确的视频链接");
-        }
-        //确保文件存在，且为文件上传者
-        String coverKey = coverUrlMatcher.group(3);
-        String videoKey = videoUrlMatcher.group(3);
-        UploadRecordVO videoUploadRecordVO = ossFeignClient.isObjectExists("nekowindow", "upload/video/" + videoKey).getData();
-        UploadRecordVO coverUploadRecordVO = ossFeignClient.isObjectExists("nekowindow", "upload/cover/" + coverKey).getData();
-
-        if (videoUploadRecordVO == null || coverUploadRecordVO == null) {
-            throw new ServiceException(400, "指定对象不存在");
+    public CreateVideoPostVO createVideoPost(CreateVideoPostDTO dto, Long userId) {
+        if (isCoverUrlInvalid(dto.getCoverUrl(), userId)){
+            throw new ServiceException(400, "封面链接不正确");
         }
 
-        if (!videoUploadRecordVO.getUid().equals(userId) || !coverUploadRecordVO.getUid().equals(userId)) {
-            throw new ServiceException(403, "当前用户不是文件上传者");
+        if (isVideoUrlInvalid(dto.getVideoUrl(), userId)){
+            throw new ServiceException(400, "视频链接不正确");
         }
 
         Set<String> tagSet = new HashSet<>();
@@ -172,6 +202,7 @@ public class VideoServiceImpl implements VideoService {
                 post.getNkid(),
                 post.getTitle(),
                 post.getDescription(),
+                post.getCoverUrl(),
                 uploadUserVo,
                 tags,
                 post.getCreatedAt()
@@ -240,7 +271,7 @@ public class VideoServiceImpl implements VideoService {
                     UserVo userVo = userFeignClient.get(videoPost.getUid());
                     UploadUserVO uploadUserVO = new UploadUserVO(userVo.getUsername(), userVo.getUid(), userVo.getSign(), userVo.getFans(), userVo.getAvatarUrl());
                     List<String> tags = postTagMapper.selectList(new LambdaQueryWrapper<PostTag>().eq(PostTag::getNkid, videoPost.getNkid())).stream().map(PostTag::getTagName).toList();
-                    return new VideoPostBriefVO(videoPost.getNkid(), videoPost.getTitle(), videoPost.getDescription(), uploadUserVO, tags, videoPost.getCreatedAt());
+                    return new VideoPostBriefVO(videoPost.getNkid(), videoPost.getTitle(), videoPost.getDescription(),videoPost.getCoverUrl(), uploadUserVO, tags, videoPost.getCreatedAt());
                 })
                 .collect(Collectors.toList());
     }
@@ -266,11 +297,58 @@ public class VideoServiceImpl implements VideoService {
                     videoPost.getNkid(),
                     videoPost.getTitle(),
                     videoPost.getDescription(),
+                    videoPost.getCoverUrl(),
                     uploader,
                     tags,
                     videoPost.getCreatedAt()
             ));
         }
         return result;
+    }
+
+    /**
+     * 更新视频信息
+     * @param dto 更新数据，见{@link UpdatePostBriefDTO}
+     * @param uid 发起者用户uid
+     */
+    @Override
+    @Transactional
+    public void updatePostBrief(UpdatePostBriefDTO dto, Long uid) {
+        VideoPost videoPost = videoPostMapper.selectById(dto.getNkid());
+        if (videoPost == null){
+            throw new ServiceException(404, "稿件不存在");
+        }
+
+        if (!videoPost.getUid().equals(uid)){
+            throw new ServiceException(403, "当前登录用户没有权限修改指定稿件");
+        }
+
+        if (dto.getTitle() != null){
+            videoPost.setTitle(dto.getTitle());
+        }
+        if (dto.getDescription() != null){
+            videoPost.setDescription(dto.getDescription());
+        }
+        if (dto.getCoverUrl() != null){
+            if (isCoverUrlInvalid(dto.getCoverUrl(), uid)){
+                throw new ServiceException(400, "封面链接不正确");
+            }
+            videoPost.setCoverUrl(dto.getCoverUrl());
+        }
+
+        videoPostMapper.updateById(videoPost);
+
+        if (dto.getTags() != null){
+            postTagMapper.delete(new LambdaQueryWrapper<PostTag>().eq(PostTag::getNkid, dto.getNkid()));
+            for(String tag : dto.getTags()){
+                postTagMapper.insert(new PostTag(dto.getNkid(), tag));
+            }
+        }
+
+//        if (dto.getVideoUrl() != null){
+//            if (isVideoUrlInvalid(dto.getVideoUrl(), uid)){
+//                throw new ServiceException(400, "视频链接不正确");
+//            }
+//        }
     }
 }
