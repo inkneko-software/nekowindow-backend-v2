@@ -29,7 +29,7 @@ public class VideoPostDetailVO {
     private UploadUserVO uploader;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
-    private List<VideoPostVideosVO> videos;
+    private List<VideoPostResourceVO> videos;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private List<String> tags;

@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class VideoPostVideosVO {
+public class VideoPostResourceVO {
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private Long videoId;

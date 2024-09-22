@@ -154,7 +154,7 @@ public class VideoServiceImpl implements VideoService {
             postTagMapper.insert(new PostTag(videoPost.getNkid(), tag));
         }
         //保存稿件视频信息
-        VideoPostVideos videoPostVideos = new VideoPostVideos(
+        VideoPostResource videoPostResource = new VideoPostResource(
                 null,
                 videoPost.getNkid(),
                 dto.getTitle(),
@@ -170,7 +170,7 @@ public class VideoServiceImpl implements VideoService {
                 null
         );
 
-        videoPostResourceMapper.insert(videoPostVideos);
+        videoPostResourceMapper.insert(videoPostResource);
 
         //发布转码任务
         //encodeFeignClient.parseSourceVideo(dto.getVideoUrl());
@@ -193,9 +193,9 @@ public class VideoServiceImpl implements VideoService {
         List<String> tags = videoTags.stream().map(PostTag::getTagName).collect(Collectors.toList());
         UserVo userVo = userFeignClient.get(post.getUid());
         UploadUserVO uploadUserVo = new UploadUserVO(userVo.getUsername(), userVo.getUid(), userVo.getSign(), userVo.getFans(), userVo.getAvatarUrl());
-        List<VideoPostVideosVO> videosVos = videoPostResourceMapper.selectList(new LambdaQueryWrapper<VideoPostVideos>().eq(VideoPostVideos::getNkid, post.getNkid()))
+        List<VideoPostResourceVO> videosVos = videoPostResourceMapper.selectList(new LambdaQueryWrapper<VideoPostResource>().eq(VideoPostResource::getNkid, post.getNkid()))
                 .stream()
-                .map(videoPostVideos -> new VideoPostVideosVO(videoPostVideos.getVideoId(), videoPostVideos.getTitle(), videoPostVideos.getVisit(), videoPostVideos.getSourceVideoUrl()))
+                .map(videoPostResource -> new VideoPostResourceVO(videoPostResource.getVideoId(), videoPostResource.getTitle(), videoPostResource.getVisit(), videoPostResource.getSourceVideoUrl()))
                 .toList();
 
         return new VideoPostBriefVO(
