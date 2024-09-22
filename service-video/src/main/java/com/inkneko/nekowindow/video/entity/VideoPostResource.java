@@ -11,7 +11,7 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class VideoPostVideos {
+public class VideoPostResource {
     @TableId(type = IdType.AUTO)
     Long videoId;
     Long nkid;
@@ -26,4 +26,6 @@ public class VideoPostVideos {
     String sourceVideoUrl;
     String dashMpdUrl;
     Date conversionAt;
+    String sourceResolution;
+    String availableResolution;
 }
