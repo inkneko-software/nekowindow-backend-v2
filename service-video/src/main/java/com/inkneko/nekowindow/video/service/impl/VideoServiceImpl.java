@@ -64,21 +64,22 @@ public class VideoServiceImpl implements VideoService {
 
     /**
      * 检查用户提供的视频URL是否为站内资源，并且是上传者
-     * @param url 视频的文件URL
+     *
+     * @param url    视频的文件URL
      * @param userId 用户id
      * @return 若文件为站内资源，且userId为该文件的上传者，返回false，否则返回true
      */
-    private boolean isVideoUrlInvalid(String url, Long userId){
+    private boolean isVideoUrlInvalid(String url, Long userId) {
         //检查链接是否为站内资源
         Pattern pattern = Pattern.compile(ossEndpointConfig.endpoint + "/nekowindow/upload/video/(.+?)");
         Matcher matcher = pattern.matcher(url);
-        if (!matcher.matches()){
+        if (!matcher.matches()) {
             return false;
         }
         //检查是否存在
         String videoObjectKey = matcher.group(1);
         UploadRecordVO videoUploadRecordVO = ossFeignClient.isObjectExists("nekowindow", "upload/video/" + videoObjectKey).getData();
-        if (videoUploadRecordVO == null){
+        if (videoUploadRecordVO == null) {
             return false;
         }
         //检查是否为上传者
@@ -87,21 +88,22 @@ public class VideoServiceImpl implements VideoService {
 
     /**
      * 检查用户提供的封面URL是否为站内资源，并且是上传者
-     * @param url 封面图片的文件URL
+     *
+     * @param url    封面图片的文件URL
      * @param userId 用户id
      * @return 若文件为站内资源，且userId为该文件的上传者，返回false，否则返回true
      */
-    private boolean isCoverUrlInvalid(String url, Long userId){
+    private boolean isCoverUrlInvalid(String url, Long userId) {
         //检查链接是否为站内资源
         Pattern pattern = Pattern.compile(ossEndpointConfig.endpoint + "/nekowindow/upload/cover/(.+?)");
         Matcher matcher = pattern.matcher(url);
-        if (!matcher.matches()){
+        if (!matcher.matches()) {
             return false;
         }
         //检查是否存在
         String coverObjectKey = matcher.group(1);
         UploadRecordVO coverUploadRecordVO = ossFeignClient.isObjectExists("nekowindow", "upload/cover/" + coverObjectKey).getData();
-        if (coverUploadRecordVO == null){
+        if (coverUploadRecordVO == null) {
             return false;
         }
         //检查是否为上传者
@@ -118,11 +120,11 @@ public class VideoServiceImpl implements VideoService {
     @Override
     @Transactional
     public CreateVideoPostVO createVideoPost(CreateVideoPostDTO dto, Long userId) {
-        if (isCoverUrlInvalid(dto.getCoverUrl(), userId)){
+        if (isCoverUrlInvalid(dto.getCoverUrl(), userId)) {
             throw new ServiceException(400, "封面链接不正确");
         }
 
-        if (isVideoUrlInvalid(dto.getVideoUrl(), userId)){
+        if (isVideoUrlInvalid(dto.getVideoUrl(), userId)) {
             throw new ServiceException(400, "视频链接不正确");
         }
 
@@ -134,8 +136,8 @@ public class VideoServiceImpl implements VideoService {
         }
 
         //检查分区
-        PartitionInfo partitionInfo =  partitionInfoMapper.selectById(dto.getPartitionId());
-        if (partitionInfo == null){
+        PartitionInfo partitionInfo = partitionInfoMapper.selectById(dto.getPartitionId());
+        if (partitionInfo == null) {
             throw new ServiceException(400, "指定分区不存在");
         }
 
@@ -167,6 +169,8 @@ public class VideoServiceImpl implements VideoService {
                 "",
                 dto.getVideoUrl(),
                 "",
+                null,
+                null,
                 null
         );
 
@@ -231,7 +235,25 @@ public class VideoServiceImpl implements VideoService {
      */
     @Override
     public VideoPostDetailVO getVideoPostDetail(Long nkid) {
-        return null;
+        //查询投稿
+        VideoPost videoPost = videoPostMapper.selectById(nkid);
+        if (videoPost == null) {
+            throw new ServiceException(404, "稿件不存在");
+        }
+        //查询上传者
+        UserVo uploader = userFeignClient.get(videoPost.getUid());
+        UploadUserVO uploadUserVO = new UploadUserVO(uploader);
+        //查询视频资源
+        List<VideoPostResource> postResources = videoPostResourceMapper.selectList(
+                new LambdaQueryWrapper<VideoPostResource>().eq(VideoPostResource::getNkid, nkid)
+        );
+        List<VideoPostResourceVO> postResourceVOs = postResources.stream().map(VideoPostResourceVO::new).toList();
+        //查询标签
+        List<String> tags = postTagMapper.selectList(new LambdaQueryWrapper<PostTag>().eq(PostTag::getNkid, nkid))
+                .stream().map(PostTag::getTagName).toList();
+
+
+        return new VideoPostDetailVO(videoPost, uploadUserVO, postResourceVOs, tags);
     }
 
     /**
@@ -271,7 +293,7 @@ public class VideoServiceImpl implements VideoService {
                     UserVo userVo = userFeignClient.get(videoPost.getUid());
                     UploadUserVO uploadUserVO = new UploadUserVO(userVo.getUsername(), userVo.getUid(), userVo.getSign(), userVo.getFans(), userVo.getAvatarUrl());
                     List<String> tags = postTagMapper.selectList(new LambdaQueryWrapper<PostTag>().eq(PostTag::getNkid, videoPost.getNkid())).stream().map(PostTag::getTagName).toList();
-                    return new VideoPostBriefVO(videoPost.getNkid(), videoPost.getTitle(), videoPost.getDescription(),videoPost.getCoverUrl(), uploadUserVO, tags, videoPost.getCreatedAt());
+                    return new VideoPostBriefVO(videoPost.getNkid(), videoPost.getTitle(), videoPost.getDescription(), videoPost.getCoverUrl(), uploadUserVO, tags, videoPost.getCreatedAt());
                 })
                 .collect(Collectors.toList());
     }
@@ -308,6 +330,7 @@ public class VideoServiceImpl implements VideoService {
 
     /**
      * 更新视频信息
+     *
      * @param dto 更新数据，见{@link UpdatePostBriefDTO}
      * @param uid 发起者用户uid
      */
@@ -315,22 +338,22 @@ public class VideoServiceImpl implements VideoService {
     @Transactional
     public void updatePostBrief(UpdatePostBriefDTO dto, Long uid) {
         VideoPost videoPost = videoPostMapper.selectById(dto.getNkid());
-        if (videoPost == null){
+        if (videoPost == null) {
             throw new ServiceException(404, "稿件不存在");
         }
 
-        if (!videoPost.getUid().equals(uid)){
+        if (!videoPost.getUid().equals(uid)) {
             throw new ServiceException(403, "当前登录用户没有权限修改指定稿件");
         }
 
-        if (dto.getTitle() != null){
+        if (dto.getTitle() != null) {
             videoPost.setTitle(dto.getTitle());
         }
-        if (dto.getDescription() != null){
+        if (dto.getDescription() != null) {
             videoPost.setDescription(dto.getDescription());
         }
-        if (dto.getCoverUrl() != null){
-            if (isCoverUrlInvalid(dto.getCoverUrl(), uid)){
+        if (dto.getCoverUrl() != null) {
+            if (isCoverUrlInvalid(dto.getCoverUrl(), uid)) {
                 throw new ServiceException(400, "封面链接不正确");
             }
             videoPost.setCoverUrl(dto.getCoverUrl());
@@ -338,9 +361,9 @@ public class VideoServiceImpl implements VideoService {
 
         videoPostMapper.updateById(videoPost);
 
-        if (dto.getTags() != null){
+        if (dto.getTags() != null) {
             postTagMapper.delete(new LambdaQueryWrapper<PostTag>().eq(PostTag::getNkid, dto.getNkid()));
-            for(String tag : dto.getTags()){
+            for (String tag : dto.getTags()) {
                 postTagMapper.insert(new PostTag(dto.getNkid(), tag));
             }
         }

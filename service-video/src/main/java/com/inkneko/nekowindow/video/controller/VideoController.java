@@ -4,14 +4,12 @@ import com.inkneko.nekowindow.api.oss.client.OssFeignClient;
 import com.inkneko.nekowindow.api.oss.dto.GenUploadUrlDTO;
 import com.inkneko.nekowindow.common.Response;
 import com.inkneko.nekowindow.common.util.GatewayAuthUtils;
-import com.inkneko.nekowindow.video.dto.CreateVideoPostDto;
+import com.inkneko.nekowindow.video.dto.CreateVideoPostDTO;
 import com.inkneko.nekowindow.video.entity.PartitionInfo;
 import com.inkneko.nekowindow.video.entity.PartitionRecommendTag;
+import com.inkneko.nekowindow.video.entity.VideoPost;
 import com.inkneko.nekowindow.video.service.VideoService;
-import com.inkneko.nekowindow.video.vo.CreateVideoPostVO;
-import com.inkneko.nekowindow.video.vo.HomeRecommendVO;
-import com.inkneko.nekowindow.video.vo.VideoPostBriefVO;
-import com.inkneko.nekowindow.video.vo.VideoPostDetailVO;
+import com.inkneko.nekowindow.video.vo.*;
 import io.swagger.v3.oas.annotations.Operation;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +49,7 @@ public class VideoController {
 
     @PostMapping("/createVideoPost")
     @Operation(summary = "创建视频投稿")
-    public Response<CreateVideoPostVO> createVideoPost(@RequestBody CreateVideoPostDto dto) {
+    public Response<CreateVideoPostVO> createVideoPost(@RequestBody CreateVideoPostDTO dto) {
         Long uid = GatewayAuthUtils.auth();
         return new Response<>("创建成功", videoService.createVideoPost(dto, uid));
     }
@@ -106,6 +104,14 @@ public class VideoController {
                                                                     @RequestParam(defaultValue = "1") Long page,
                                                                     @RequestParam(defaultValue = "10") Long size) {
         return new Response<>("ok", videoService.getPartitionVideos(partitionId, page, size));
+    }
+
+    @GetMapping("/getUploadedVideos")
+    @Operation(summary = "获取已上传视频列表")
+    public Response<List<UserUploadedVideoStatisticsVO>> getUserPosts(@RequestParam Long uid, @RequestParam(defaultValue = "1") Long page, @RequestParam(defaultValue = "20") Long size){
+        List<VideoPost> userVideoPosts = videoService.getUploadedVideoPosts(uid, page, size);
+        List<UserUploadedVideoStatisticsVO> convertedVos = userVideoPosts.stream().map(UserUploadedVideoStatisticsVO::new).toList();
+        return new Response<>("ok", convertedVos);
     }
 
 

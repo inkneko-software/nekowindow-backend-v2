@@ -1,5 +1,6 @@
 package com.inkneko.nekowindow.video.vo;
 
+import com.inkneko.nekowindow.api.user.vo.UserVo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -23,4 +24,13 @@ public class UploadUserVO {
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String avatarUrl;
+
+    public UploadUserVO(UserVo userVo) {
+        this.username = userVo.getUsername();
+        this.userId = userVo.getUid();
+        this.sign = userVo.getSign();
+        this.fans = userVo.getFans();
+        this.avatarUrl = userVo.getAvatarUrl();
+    }
+
 }

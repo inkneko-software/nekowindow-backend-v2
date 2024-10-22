@@ -1,5 +1,6 @@
 package com.inkneko.nekowindow.video.vo;
 
+import com.inkneko.nekowindow.video.entity.VideoPostResource;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,4 +22,11 @@ public class VideoPostResourceVO {
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String dashMpdUrl;
+
+    public VideoPostResourceVO(VideoPostResource videoPostResource) {
+        this.videoId = videoPostResource.getVideoId();
+        this.title = videoPostResource.getTitle();
+        this.visit = videoPostResource.getVisit();
+        this.dashMpdUrl = videoPostResource.getSourceVideoUrl();
+    }
 }
