@@ -1,6 +1,7 @@
 package com.inkneko.nekowindow.user.vo;
 
 import com.inkneko.nekowindow.user.entity.UserDetail;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,15 +12,34 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserDetailVO {
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private Long uid;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String username;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String sign;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer exp;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String gender;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private Date birth;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String avatarUrl;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String bannerUrl;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer fans;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer subscribes;
 
     public UserDetailVO(UserDetail userDetail){
