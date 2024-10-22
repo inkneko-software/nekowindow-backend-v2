@@ -3,25 +3,13 @@ server:
   forward-headers-strategy: framework
 
 spring:
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/nekowindow_oss
-    username: root
-    password: test
   application:
     name: nekowindow-service-oss
   cloud:
     nacos:
+      server-addr: 10.200.0.1:8848
       discovery:
-        server-addr: localhost:8848
-
-springdoc:
-  swagger-ui:
-    path: "/swagger/oss/swagger-ui.html"
-  api-docs:
-    path: "/swagger/oss/api-docs"
-
-s3:
-  access-key: user
-  secret-key: password
-  endpoint: http://localhost:9000
+        group: dev
+  config:
+    import:
+      - nacos:nekowindow-service-oss.yaml?refresh=true&group=dev

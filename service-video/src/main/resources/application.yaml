@@ -1,23 +1,15 @@
 server:
-  port: 8320
+  port: 8020
   forward-headers-strategy: framework
+
 spring:
   application:
     name: nekowindow-service-video
   cloud:
     nacos:
+      server-addr: 10.200.0.1:8848
       discovery:
-        server-addr: localhost:8848
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/nekowindow_video
-    username: root
-    password: test
-s3:
-  endpoint: http://localhost:9000
-
-springdoc:
-  swagger-ui:
-    path: "/swagger/video/swagger-ui.html"
-  api-docs:
-    path: "/swagger/video/api-docs"
+        group: dev
+  config:
+    import:
+      - nacos:nekowindow-service-video.yaml?refresh=true&group=dev

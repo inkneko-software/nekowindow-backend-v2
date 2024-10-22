@@ -1,25 +1,15 @@
 server:
   port: 8010
   forward-headers-strategy: framework
+
 spring:
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/nekowindow_account
-    username: root
-    password: test
   application:
     name: nekowindow-service-auth
   cloud:
     nacos:
+      server-addr: 10.200.0.1:8848
       discovery:
-        server-addr: localhost:8848
-  data:
-    redis:
-      host: localhost
-      port: 6379
-
-springdoc:
-  swagger-ui:
-    path: "/swagger/auth/swagger-ui.html"
-  api-docs:
-    path: "/swagger/auth/api-docs"
+        group: dev
+  config:
+    import:
+      - nacos:nekowindow-service-auth.yaml?refresh=true&group=dev
