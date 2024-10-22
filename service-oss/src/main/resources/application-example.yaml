@@ -1,0 +1,28 @@
+server:
+  port: 8200
+  forward-headers-strategy: framework
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://10.200.0.1:3306/nekowindow_oss
+    username: nekowindow_dev
+    password: password
+  application:
+    name: nekowindow-service-oss
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 10.200.0.1:8848
+        group: dev
+
+springdoc:
+  swagger-ui:
+    path: "/swagger/oss/swagger-ui.html"
+  api-docs:
+    path: "/swagger/oss/api-docs"
+
+s3:
+  access-key: user
+  secret-key: password
+  endpoint: http://localhost:9000

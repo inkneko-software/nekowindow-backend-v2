@@ -1,0 +1,39 @@
+server:
+  port: 8020
+  forward-headers-strategy: native
+
+spring:
+  application:
+    name: nekowindow-service-user
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 10.200.0.1:8848
+        group: dev
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://10.200.0.1/nekowindow_account?serverTimezone=Asia/Shanghai
+    username: nekowindow_dev
+    password: password
+  mail:
+    host: smtp.office365.com
+    port: 587
+    username: nekowindow@example.com
+    password: password
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          starttls:
+            enable: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+
+springdoc:
+  swagger-ui:
+    path: "/swagger/user/swagger-ui.html"
+  api-docs:
+    path: "/swagger/user/api-docs"
