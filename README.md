@@ -42,6 +42,7 @@ mvn -s mvn_tencent_mirror_settings.xml -f pom.xml clean package -Dmaven.test.ski
 使用python脚本将各服务打包为docker镜像
 ```python
 #打包
+import os
 targets=['gateway', 'service-auth', 'service-user', 'service-oss', 'service-video']
 
 for target in targets:
@@ -55,7 +56,7 @@ for target in targets:
 ```yaml
 services:
   gateway:
-    image: ccr.cino.ink/nekowindow-gateway
+    image: nekowindow-gateway
     environment:
       - SPRING_CLOUD_NACOS_SERVERADDR=10.200.0.1
       - SPRING_CLOUD_NACOS_DISCOVERY_GROUP=prod
@@ -63,28 +64,27 @@ services:
     ports:
       - 10.200.0.10:8000:80
   service-auth:
-    image: ccr.cino.ink/nekowindow-service-auth
+    image: nekowindow-service-auth
     environment:
       - SPRING_CLOUD_NACOS_SERVERADDR=10.200.0.1
       - SPRING_CLOUD_NACOS_DISCOVERY_GROUP=prod
       - SPRING_CLOUD_NACOS_CONFIG_GROUP=prod
   service-user:
-    image: ccr.cino.ink/nekowindow-service-user
+    image: nekowindow-service-user
     environment:
       - SPRING_CLOUD_NACOS_SERVERADDR=10.200.0.1
       - SPRING_CLOUD_NACOS_DISCOVERY_GROUP=prod
       - SPRING_CLOUD_NACOS_CONFIG_GROUP=prod
   service-video:
-    image: ccr.cino.ink/nekowindow-service-video
+    image: nekowindow-service-video
     environment:
       - SPRING_CLOUD_NACOS_SERVERADDR=10.200.0.1
       - SPRING_CLOUD_NACOS_DISCOVERY_GROUP=prod
       - SPRING_CLOUD_NACOS_CONFIG_GROUP=prod
   service-oss:
-    image: ccr.cino.ink/nekowindow-service-oss
+    image: nekowindow-service-oss
     environment:
       - SPRING_CLOUD_NACOS_SERVERADDR=10.200.0.1
       - SPRING_CLOUD_NACOS_DISCOVERY_GROUP=prod
       - SPRING_CLOUD_NACOS_CONFIG_GROUP=prod
-
 ```
