@@ -1,0 +1,8 @@
+FROM eclipse-temurin:18-jre
+
+ARG SERVICE_NAME
+
+WORKDIR /app
+COPY $SERVICE_NAME/target/$SERVICE_NAME-0.0.1-SNAPSHOT.jar /app/$SERVICE_NAME.jar
+
+CMD java -jar $SERVICE_NAME.jar
