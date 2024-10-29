@@ -8,8 +8,5 @@ spring:
   cloud:
     nacos:
       server-addr: 10.200.0.1:8848
-      discovery:
-        group: dev
   config:
-    import:
-      - nacos:nekowindow-service-oss.yaml?refresh=true&group=dev
+    import: nacos:nekowindow-service-oss.yaml?refresh=true

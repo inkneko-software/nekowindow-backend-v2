@@ -1,5 +1,5 @@
 server:
-  port: 8020
+  port: 8320
   forward-headers-strategy: framework
 
 spring:
@@ -8,8 +8,5 @@ spring:
   cloud:
     nacos:
       server-addr: 10.200.0.1:8848
-      discovery:
-        group: dev
   config:
-    import:
-      - nacos:nekowindow-service-video.yaml?refresh=true&group=dev
+    import: nacos:nekowindow-service-video.yaml?refresh=true
