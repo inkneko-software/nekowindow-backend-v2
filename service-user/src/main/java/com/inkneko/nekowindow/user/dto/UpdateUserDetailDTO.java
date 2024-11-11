@@ -11,8 +11,6 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UpdateUserDetailDTO {
-    @NotNull
-    private Long uid;
     private String username;
     private String sign;
     private String gender;
