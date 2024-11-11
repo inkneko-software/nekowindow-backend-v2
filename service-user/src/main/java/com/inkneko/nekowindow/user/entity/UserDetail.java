@@ -3,6 +3,8 @@ package com.inkneko.nekowindow.user.entity;
 import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Date;
 
 @Data
@@ -19,4 +21,5 @@ public class UserDetail {
      private Integer fans;
      private Integer subscribes;
      private Integer coins;
+     private ZonedDateTime lastLogin;
 }
