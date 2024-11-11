@@ -7,7 +7,6 @@ import com.inkneko.nekowindow.common.ServiceException;
 import com.inkneko.nekowindow.user.config.UserServiceConfig;
 import com.inkneko.nekowindow.user.dto.EmailLoginDTO;
 import com.inkneko.nekowindow.user.dto.SendLoginEmailCodeDTO;
-import com.inkneko.nekowindow.user.entity.DailyBonusRecord;
 import com.inkneko.nekowindow.user.entity.Relation;
 import com.inkneko.nekowindow.user.entity.UserCredential;
 import com.inkneko.nekowindow.user.entity.UserDetail;
@@ -16,6 +15,7 @@ import com.inkneko.nekowindow.user.service.UserService;
 import com.inkneko.nekowindow.user.util.AsyncMailSender;
 import com.inkneko.nekowindow.user.vo.DailyBonusVO;
 import com.inkneko.nekowindow.user.vo.LoginVO;
+import com.inkneko.nekowindow.user.vo.MyUserDetailVO;
 import com.inkneko.nekowindow.user.vo.UserDetailVO;
 import org.apache.commons.lang3.time.DateUtils;
 import org.redisson.api.RMapCache;
@@ -27,6 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import java.security.SecureRandom;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -41,7 +43,6 @@ public class UserServiceImpl implements UserService {
     private final UserServiceConfig userServiceConfig;
     private final UserCredentialMapper userCredentialMapper;
     private final UserDetailMapper userDetailMapper;
-    private final DailyBonusRecordMapper dailyBonusRecordMapper;
     private final RelationMapper relationMapper;
     private final PrivateMessageMapper privateMessageMapper;
 
@@ -57,7 +58,6 @@ public class UserServiceImpl implements UserService {
             UserServiceConfig userServiceConfig,
             UserDetailMapper userDetailMapper,
             RedissonClient redissonClient,
-            DailyBonusRecordMapper dailyBonusRecordMapper,
             AuthClient authClient,
             RelationMapper relationMapper,
             PrivateMessageMapper privateMessageMapper
@@ -66,7 +66,6 @@ public class UserServiceImpl implements UserService {
         this.secureRandom = new SecureRandom();
         this.userCredentialMapper = userCredentialMapper;
         this.userDetailMapper = userDetailMapper;
-        this.dailyBonusRecordMapper = dailyBonusRecordMapper;
         this.redissonClient = redissonClient;
         this.loginEmailCodeMap = redissonClient.getMapCache("user-login-email-code");
         this.registerEmailCodeMap = redissonClient.getMapCache("user-register-email-code");
@@ -153,34 +152,40 @@ public class UserServiceImpl implements UserService {
         return userDetail;
     }
 
-
+    /**
+     * 查询指定userId用户的详细资料，同时并尝试获取该用户的登录奖励
+     *
+     * @param userId 用户id
+     * @return 用户详细资料以及登录奖励获得信息
+     */
     @Override
-    public void updateUserDetail(UserDetail userDetail) {
-        userDetailMapper.updateById(userDetail);
-    }
+    public MyUserDetailVO getMyUserDetail(Long userId) {
+        //使用isolation=读已提交与select for update实现行级锁
+        LambdaQueryWrapper<UserDetail> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.eq(UserDetail::getUid, userId);
+        lambdaQueryWrapper.last("for update");
+        UserDetail userDetail = userDetailMapper.selectOne(lambdaQueryWrapper);
 
-
-    @Override
-    @Transactional(isolation = Isolation.SERIALIZABLE)
-    public DailyBonusVO doDailyBonus(Long uid) {
-        UserDetail userDetail = userDetailMapper.selectById(uid);
         if (userDetail == null) {
             throw new ServiceException(404, "用户不存在");
         }
-
-        DailyBonusRecord dailyBonusRecord = dailyBonusRecordMapper.selectById(uid);
-        if (dailyBonusRecord == null || !DateUtils.isSameDay(dailyBonusRecord.getCreatedAt(), new Date())) {
-            if (dailyBonusRecord == null) {
-                dailyBonusRecord = new DailyBonusRecord(uid, 1, new Date());
-                dailyBonusRecordMapper.insert(dailyBonusRecord);
-            } else {
-                dailyBonusRecord.setCreatedAt(new Date());
-                dailyBonusRecord.setCoins(dailyBonusRecord.getCoins() + 1);
-                dailyBonusRecordMapper.updateById(dailyBonusRecord);
-            }
-            return new DailyBonusVO(uid, true, dailyBonusRecord.getCoins());
+        //检查是否为同一天
+        boolean isDifferentDay = !LocalDate.now().isEqual(userDetail.getLastLogin().toLocalDate());
+        if (isDifferentDay) {
+            userDetail.setLastLogin(ZonedDateTime.now());
+            userDetail.setCoins(userDetail.getCoins() + 1);
+            userDetailMapper.updateById(userDetail);
         }
-        return new DailyBonusVO(uid, false, dailyBonusRecord.getCoins());
+        return new MyUserDetailVO(userDetail, isDifferentDay);
+    }
+
+    @Override
+    public void updateUserDetail(UserDetail userDetail) {
+        String username = userDetail.getUsername();
+        if (username != null && username.trim().isEmpty()){
+            throw new ServiceException(400, "用户名不能为空");
+        }
+        userDetailMapper.updateById(userDetail);
     }
 
     /**

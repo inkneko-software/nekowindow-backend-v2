@@ -7,6 +7,7 @@ import com.inkneko.nekowindow.user.dto.SendLoginEmailCodeDTO;
 import com.inkneko.nekowindow.user.dto.UpdateUserDetailDTO;
 import com.inkneko.nekowindow.user.vo.DailyBonusVO;
 import com.inkneko.nekowindow.user.vo.LoginVO;
+import com.inkneko.nekowindow.user.vo.MyUserDetailVO;
 import com.inkneko.nekowindow.user.vo.UserDetailVO;
 import com.inkneko.nekowindow.common.Response;
 import com.inkneko.nekowindow.common.util.GatewayAuthUtils;
@@ -50,15 +51,13 @@ public class UserController {
         response.addCookie(userIdCookie);
         response.addCookie(sessionTokenCookie);
         return new Response<>("登录成功");
-}
+    }
 
     @PostMapping("/updateUserDetail")
     @Operation(summary = "更新用户资料")
-    public Response<?> updateUserDetail(@Validated @RequestBody UpdateUserDetailDTO dto, HttpServletRequest request, HttpServletResponse response) {
-        Long uid = GatewayAuthUtils.auth(request);
-        if (!dto.getUid().equals(uid)) {
-            return new Response<>(403, "请先登录");
-        }
+    public Response<?> updateUserDetail(@Validated @RequestBody UpdateUserDetailDTO dto) {
+        Long uid = GatewayAuthUtils.auth();
+
         UserDetail userDetail = new UserDetail();
         userDetail.setUid(uid);
         userDetail.setSign(dto.getSign());
@@ -79,42 +78,18 @@ public class UserController {
             return new Response<>(404, "用户不存在");
         }
 
-        UserDetailVO userDetailVo = new UserDetailVO(
-                userDetail.getUid(),
-                userDetail.getUsername(),
-                userDetail.getSign(),
-                userDetail.getExp(),
-                userDetail.getGender(),
-                userDetail.getBirth(),
-                userDetail.getAvatarUrl(),
-                userDetail.getBannerUrl(),
-                userDetail.getFans(),
-                userDetail.getSubscribes()
-        );
+        UserDetailVO userDetailVo = new UserDetailVO(userDetail);
         return new Response<>("ok", userDetailVo);
     }
 
     @GetMapping("/myUserDetail")
     @Operation(summary = "查询当前用户的个人资料")
-    public Response<UserDetailVO> myUserDetail(HttpServletRequest request){
+    public Response<MyUserDetailVO> myUserDetail(HttpServletRequest request) {
         Long uid = GatewayAuthUtils.auth(request);
-        if (uid == null){
+        if (uid == null) {
             return new Response<>(403, "请先登录");
         }
 
-        return getUserDetail(uid);
+        return new Response<>("ok", userService.getMyUserDetail(uid));
     }
-
-    @PostMapping("/checkDailyBonus")
-    @Operation(summary = "尝试获取当日奖励")
-    public Response<DailyBonusVO> checkDailyBonus(HttpServletRequest request){
-        Long uid = GatewayAuthUtils.auth(request);
-        if (uid == null){
-            return new Response<>(403, "请先登录");
-        }
-
-        return new Response<>("ok", userService.doDailyBonus(uid));
-    }
-
-
 }

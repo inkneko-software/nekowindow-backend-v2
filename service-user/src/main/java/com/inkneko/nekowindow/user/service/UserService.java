@@ -5,6 +5,7 @@ import com.inkneko.nekowindow.user.dto.SendLoginEmailCodeDTO;
 import com.inkneko.nekowindow.user.entity.UserDetail;
 import com.inkneko.nekowindow.user.vo.DailyBonusVO;
 import com.inkneko.nekowindow.user.vo.LoginVO;
+import com.inkneko.nekowindow.user.vo.MyUserDetailVO;
 import com.inkneko.nekowindow.user.vo.UserDetailVO;
 
 import java.util.List;
@@ -34,19 +35,19 @@ public interface UserService {
     UserDetail getUserDetail(Long userId);
 
     /**
+     * 查询指定userId用户的详细资料，同时并尝试获取该用户的登录奖励
+     *
+     * @param userId 用户id
+     * @return 用户详细资料以及登录奖励获得信息
+     */
+    MyUserDetailVO getMyUserDetail(Long userId);
+
+    /**
      * 更新用户信息
      *
      * @param userDetail 用户信息
      */
     void updateUserDetail(UserDetail userDetail);
-
-    /**
-     * 获取每日登录奖励
-     *
-     * @param uid 用户id
-     * @return 每日奖励信息
-     */
-    DailyBonusVO doDailyBonus(Long uid);
 
     /**
      * 关注用户
@@ -79,7 +80,5 @@ public interface UserService {
      * @return 指定用户的粉丝列表
      */
     List<UserDetailVO> getUserFollowerList(Long userId, Integer page, Integer size);
-
-    
 
 }
