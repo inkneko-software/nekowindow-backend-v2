@@ -42,6 +42,12 @@ public class UserDetailVO {
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer subscribes;
 
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    private Integer followers;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    private Integer coins;
+
     public UserDetailVO(UserDetail userDetail){
         this.uid = userDetail.getUid();
         this.username = userDetail.getUsername();
@@ -53,5 +59,7 @@ public class UserDetailVO {
         this.bannerUrl = userDetail.getBannerUrl();
         this.fans = userDetail.getFans();
         this.subscribes = userDetail.getSubscribes();
+        this.followers = userDetail.getFans();
+        this.coins = userDetail.getCoins();
     }
 }
