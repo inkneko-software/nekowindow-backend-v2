@@ -18,4 +18,7 @@ public interface OssFeignClient {
     @GetMapping("/internal/oss/isObjectExists")
     Response<UploadRecordVO> isObjectExists(@RequestParam String bucket, @RequestParam String objectKey);
 
+    @GetMapping("/internal/oss/isURLValid")
+    Response<UploadRecordVO> isURLValid(@RequestParam String url);
+
 }
