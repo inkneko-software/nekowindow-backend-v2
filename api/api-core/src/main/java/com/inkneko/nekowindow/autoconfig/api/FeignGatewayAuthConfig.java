@@ -30,15 +30,15 @@ public class FeignGatewayAuthConfig {
     Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Bean
-    public RequestInterceptor requestInterceptor(){
+    public RequestInterceptor requestInterceptor() {
         logger.info("Loaded Feign Gateway Auth Plugin");
         return requestTemplate -> {
             ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attributes != null){
-                HttpServletRequest request =  attributes.getRequest();
+            if (attributes != null) {
+                HttpServletRequest request = attributes.getRequest();
                 String userId = request.getHeader(GatewayAuthUtils.HEADER_USER_ID);
                 String sessionToken = request.getHeader(GatewayAuthUtils.HEADER_SESSION);
-                if (userId != null){
+                if (userId != null) {
                     requestTemplate.header(GatewayAuthUtils.HEADER_USER_ID, userId);
                     requestTemplate.header(GatewayAuthUtils.HEADER_SESSION, sessionToken);
                 }
@@ -47,7 +47,7 @@ public class FeignGatewayAuthConfig {
     }
 
     @Bean
-    public ErrorDecoder errorDecoder(){
+    public ErrorDecoder errorDecoder() {
         return new ErrorDecoder() {
             @Override
             public Exception decode(String methodKey, Response response) {
@@ -56,12 +56,12 @@ public class FeignGatewayAuthConfig {
                     try {
                         com.inkneko.nekowindow.common.Response<?> responseBody = objectMapper.readValue(response.body().asInputStream(), com.inkneko.nekowindow.common.Response.class);
                         throw new ServiceException(responseBody.getCode(), responseBody.getMessage());
-                    }catch (DatabindException e){
-                        logger.error("failed to cast error message to ServiceException while reading upstream service's error response. calling method: {}", methodKey, e);
+                    } catch (DatabindException e) {
+                        logger.error("failed to cast error message to ServiceException while reading upstream service's error response. calling method: {}, resp status: {}, req url: {}", methodKey, response.status(), response.request().url(), e);
                         return new ServiceException(response.status(), "内部服务调用错误，请稍后尝试");
                     }
                 } catch (IOException e) {
-                    logger.error("encounter IOException while reading upstream service's error response. method: {}", methodKey, e);
+                    logger.error("encounter IOException while reading upstream service's error response. method: {}, resp status: {}, req url: {}", methodKey, response.status(), response.request().url(), e);
                     return new ServiceException(response.status(), "内部服务调用错误，请稍后尝试");
                 }
             }
