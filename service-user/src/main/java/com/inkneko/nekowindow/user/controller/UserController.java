@@ -1,11 +1,13 @@
 package com.inkneko.nekowindow.user.controller;
 
 
-import com.inkneko.nekowindow.api.auth.client.AuthClient;
+import com.inkneko.nekowindow.api.oss.client.OssFeignClient;
+import com.inkneko.nekowindow.api.oss.dto.GenUploadUrlDTO;
+import com.inkneko.nekowindow.api.oss.vo.UploadRecordVO;
+import com.inkneko.nekowindow.common.ServiceException;
 import com.inkneko.nekowindow.user.dto.EmailLoginDTO;
 import com.inkneko.nekowindow.user.dto.SendLoginEmailCodeDTO;
 import com.inkneko.nekowindow.user.dto.UpdateUserDetailDTO;
-import com.inkneko.nekowindow.user.vo.DailyBonusVO;
 import com.inkneko.nekowindow.user.vo.LoginVO;
 import com.inkneko.nekowindow.user.vo.MyUserDetailVO;
 import com.inkneko.nekowindow.user.vo.UserDetailVO;
@@ -17,17 +19,21 @@ import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/user")
 public class UserController {
-    UserService userService;
-    AuthClient authClient;
+    private final UserService userService;
+    private final OssFeignClient ossFeignClient;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, OssFeignClient ossFeignClient) {
         this.userService = userService;
+        this.ossFeignClient = ossFeignClient;
     }
 
     @PostMapping("/sendLoginEmailCode")
@@ -57,13 +63,27 @@ public class UserController {
     @Operation(summary = "更新用户资料")
     public Response<?> updateUserDetail(@Validated @RequestBody UpdateUserDetailDTO dto) {
         Long uid = GatewayAuthUtils.auth();
-
         UserDetail userDetail = new UserDetail();
+        //头像连接校验
+        if (dto.getAvatarUrl() != null) {
+            Response<UploadRecordVO> uploadRecordVO = ossFeignClient.isURLValid(dto.getAvatarUrl());
+            if (uploadRecordVO.getCode() == 404) {
+                throw new ServiceException(400, "指定头像资源URL不存在");
+            }
+            UploadRecordVO uploadRecord = uploadRecordVO.getData();
+            if (uploadRecord.getBucket().compareTo("nekowindow") != 0 || !uploadRecord.getObjectKey().startsWith("upload/avatar/")) {
+                throw new ServiceException(400, "不正确的头像资源URL");
+            }
+            if (!uploadRecord.getUid().equals(uid)) {
+                throw new ServiceException(400, "指定头像资源非当前用户上传");
+            }
+            userDetail.setAvatarUrl(dto.getAvatarUrl());
+        }
+
         userDetail.setUid(uid);
         userDetail.setSign(dto.getSign());
         userDetail.setUsername(dto.getUsername());
         userDetail.setGender(dto.getGender());
-        userDetail.setAvatarUrl(dto.getAvatarUrl());
         userDetail.setBannerUrl(dto.getBannerUrl());
         userDetail.setBirth(dto.getBirth());
         userService.updateUserDetail(userDetail);
@@ -91,5 +111,14 @@ public class UserController {
         }
 
         return new Response<>("ok", userService.getMyUserDetail(uid));
+    }
+
+    @PostMapping("/generateAvatarUploadURL")
+    @Operation(summary = "获取头像上传链接")
+    public Response<String> generateAvatarUploadURL() {
+        Long uid = GatewayAuthUtils.auth();
+        String uploadKey = DigestUtils.sha1Hex(String.format("%s-%d", UUID.randomUUID(), uid));
+        return new Response<>("ok", ossFeignClient.genUploadUrl(new GenUploadUrlDTO("nekowindow", "upload/avatar/" + uploadKey)).getData().getUploadUrl());
+
     }
 }
