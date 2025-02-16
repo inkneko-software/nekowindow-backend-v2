@@ -16,6 +16,7 @@ spring:
     password: password
 s3:
   endpoint: http://localhost:9000
+  bucket: nekowindow
 
 springdoc:
   swagger-ui:

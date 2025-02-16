@@ -4,6 +4,7 @@ import com.inkneko.nekowindow.api.oss.client.OssFeignClient;
 import com.inkneko.nekowindow.api.oss.dto.GenUploadUrlDTO;
 import com.inkneko.nekowindow.common.Response;
 import com.inkneko.nekowindow.common.util.GatewayAuthUtils;
+import com.inkneko.nekowindow.video.config.OssEndpointConfig;
 import com.inkneko.nekowindow.video.dto.CreateVideoPostDTO;
 import com.inkneko.nekowindow.video.entity.PartitionInfo;
 import com.inkneko.nekowindow.video.entity.PartitionRecommendTag;
@@ -26,6 +27,8 @@ public class VideoController {
     @Autowired
     private OssFeignClient ossFeignClient;
 
+    @Autowired
+    private OssEndpointConfig ossEndpointConfig;
 
     @Autowired
     private VideoService videoService;
@@ -35,7 +38,7 @@ public class VideoController {
     public Response<String> generateUploadUrl() {
         Long uid = GatewayAuthUtils.auth();
         String uploadKey = DigestUtils.sha1Hex(String.format("%s-%d", UUID.randomUUID(), uid));
-        return new Response<>("ok", ossFeignClient.genUploadUrl(new GenUploadUrlDTO("nekowindow", "upload/video/" + uploadKey)).getData().getUploadUrl());
+        return new Response<>("ok", ossFeignClient.genUploadUrl(new GenUploadUrlDTO(ossEndpointConfig.getBucket(), "upload/video/" + uploadKey)).getData().getUploadUrl());
     }
 
     @GetMapping("/generateCoverUploadUrl")
@@ -44,7 +47,7 @@ public class VideoController {
 
         Long uid = GatewayAuthUtils.auth();
         String uploadKey = DigestUtils.sha1Hex(String.format("%s-%d", UUID.randomUUID(), uid));
-        return new Response<>("ok", ossFeignClient.genUploadUrl(new GenUploadUrlDTO("nekowindow", "upload/cover/" + uploadKey)).getData().getUploadUrl());
+        return new Response<>("ok", ossFeignClient.genUploadUrl(new GenUploadUrlDTO(ossEndpointConfig.getBucket(), "upload/cover/" + uploadKey)).getData().getUploadUrl());
     }
 
     @PostMapping("/createVideoPost")
