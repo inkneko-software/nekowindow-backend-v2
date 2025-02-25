@@ -7,16 +7,14 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class EncodeParameter {
-    String width;
-    String height;
-    String bitRate;
+public class VideoEncodeParameter {
+    String maxBitRate;
+    Integer videoQualityCode;
     String codec;
-    String codecTag;
     String frameRate;
     String videoCrf;
-    String videoKeyFrameMinInterval;
-    String videoGopSize;
+    Integer videoGopSize;
     String videoScaleOption;
+    Integer height;
 
 }

@@ -30,6 +30,11 @@ public class ProbeResult {
          *      *
          *      * }
          */
+
+        //轨道下标
+        @JsonProperty("index")
+        private int index;
+
         @JsonProperty("codec_type")
         private String codecType;
 
@@ -53,7 +58,7 @@ public class ProbeResult {
     @AllArgsConstructor
     @NoArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class Format {
+    public static class Format {
         /**
          *      * type FormatInfo struct {
          *      * 	Duration   string `json:"duration"`

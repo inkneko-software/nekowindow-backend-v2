@@ -31,6 +31,9 @@ public class S3Config {
     @Value("${s3.endpoint}")
     private String endpoint;
 
+    @Value("${s3.bucket}")
+    private String bucket;
+
     @Bean
     public AwsCredentials awsCredentials() {
         return AwsBasicCredentials.create(accessKey, secretKey);
