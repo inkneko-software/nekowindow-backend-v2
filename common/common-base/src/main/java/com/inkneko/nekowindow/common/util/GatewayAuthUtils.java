@@ -11,9 +11,9 @@ public class GatewayAuthUtils {
 
     /**
      * 用于获取当前外部请求的发起者uid，该uid已在网关处完成鉴权。
-     * <p/>
+     * <p>
      * 由于获取uid逻辑依赖于网关所设置的请求头，因此为了使本函数正常工作，请不要使服务可由外部网络环境直接进行调用
-     * <p/>
+     * <p>
      * 内部服务间的调用不走网关，请不要使用本函数进行鉴权，应当直接在调用时指定相关uid
      *
      * @return 若用户已登录，返回uid
@@ -59,7 +59,7 @@ public class GatewayAuthUtils {
         }
 
         if (throwsException) {
-            throw new ServiceException(403, "当前未登录，未获取到用户信息");
+            throw new ServiceException(403, "未获取到当前用户信息，请先登录");
         }
         return null;
     }
