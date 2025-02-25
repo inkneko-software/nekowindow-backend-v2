@@ -118,7 +118,9 @@ public class UserServiceImpl implements UserService {
             if (code == null || !code.equals(dto.getCode())) {
                 throw new ServiceException(403, "验证码错误或已失效");
             }
-            registerEmailCodeMap.remove(dto.getEmail());
+            if (registerEmailCodeMap.remove(dto.getEmail()) == null){
+                throw new ServiceException(403, "验证码已被使用");
+            }
             userCredential = new UserCredential();
             userCredential.setEmail(dto.getEmail());
             userCredential.setAuthSalt("-");
