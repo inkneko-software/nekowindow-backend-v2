@@ -62,7 +62,7 @@ CREATE TABLE video_post(
 如果视频分辨率大于1280x720, 则最大分辨率显示为1080p，提供[超清1080p 原画质码率];若视频帧数超过60帧，则提供[超清1080p 2000Kbps @30fps], [超清1080p60 原画质码率], [高清720p 780Kbps @30fps]
 
 ```sql
-CREATE TABLE video_post_videos(
+CREATE TABLE video_post_resource(
     video_id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT '视频id',
     nkid BIGINT NOT NULL COMMENT '稿件id',
     title VARCHAR(255) NOT NULL COMMENT '视频标题',
@@ -71,11 +71,13 @@ CREATE TABLE video_post_videos(
     review_failed_reason VARCHAR(1024),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     convert_state INT NOT NULL COMMENT '转码状态，0未开始任务，1正在转码，2正在合并, 3转码完成，4转码失败',
-    convert_err_msg VARCHAR(255) COMMENT '转码失败消息',
-    duration VARCHAR(255) COMMENT '视频时长',
+    convert_err_msg VARCHAR(255) NOT NULL DEFAULT '' COMMENT '转码失败消息',
+    duration INT NOT NULL DEFAULT 0 COMMENT '视频时长，以秒为单位，非精准数据',
     source_video_url VARCHAR(255) NOT NULL COMMENT '原视频',
     dash_mpd_url VARCHAR(255) NOT NULL COMMENT 'mpd文件',
     conversion_at TIMESTAMP COMMENT '开始转码时间',
+    video_adaptions VARCHAR(255) NOT NULL DEFAULT '' COMMENT '可选视频质量代码，以逗号为分隔',
+    audio_adaptions VARCHAR(255) NOT NULL DEFAULT '' COMMENT '可选音频质量代码，以逗号为分隔'
     UNIQUE(video_id, nkid)
 )ENGINE=InnoDB DEFAULT CHARSET utf8mb4;
 ```

@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Data
@@ -19,13 +20,13 @@ public class VideoPostResource {
     Integer visit;
     Integer state;
     String reviewFailedReason;
-    Date createdAt;
+    LocalDateTime createdAt;
     Integer convertState;
     String convertErrMsg;
-    String duration;
+    Integer duration;
     String sourceVideoUrl;
     String dashMpdUrl;
-    Date conversionAt;
-    String sourceResolution;
-    String availableResolution;
+    LocalDateTime conversionAt;
+    String videoAdaptions;
+    String audioAdaptions;
 }
