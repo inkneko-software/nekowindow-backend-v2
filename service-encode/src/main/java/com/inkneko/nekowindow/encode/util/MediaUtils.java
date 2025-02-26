@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -189,12 +190,12 @@ public class MediaUtils {
      * file 1-1740315376106-h264-8M-4-11-3879596219307263676.mp4
      * <p>
      * ...
-     *<p>
+     * <p>
      * file 1-1740315535468-h264-8M-12-11-599332897789739949.mp4
      *
      * @param inputVideosTxtFile 输入文件，文件顺序将以列表顺序排列
-     * @param outputFile 输出文件
-     * @throws IOException 文件读写错误时抛出该异常
+     * @param outputFile         输出文件
+     * @throws IOException          文件读写错误时抛出该异常
      * @throws InterruptedException 被中断时抛出该异常
      */
     public static void concatVideo(File inputVideosTxtFile, File outputFile) throws IOException, InterruptedException {
@@ -214,6 +215,54 @@ public class MediaUtils {
                 "-map", "0",
                 outputFile.getAbsolutePath()
         );
+        executeTaskAndGetResult(processBuilder);
+    }
+
+    public static void dashGenerate(List<String> inputVideos, List<String> inputAudios, File outputFile, String singleFileTemplate) throws IOException, InterruptedException {
+        /*
+          ffmpeg
+            -i output-1080phigh.mp4 -i output-1080p.mp4 -i output-720p.mp4 -i output-360p.mp4 -i output-128k.m4a
+            -c copy
+            -map 0:v:0 -map 1:v:0 -map 2:v:0 -map 3:v:0 -map 4:a:0
+            -single_file 1
+            -adaptation_sets  "id=0,streams=v id=1,streams=a"
+            -dash_segment_type mp4
+            -f dash source.mpd
+         */
+
+        List<String> commands = new ArrayList<>();
+        commands.add("ffmpeg");
+        commands.add("-y");
+        commands.add("-v");
+        commands.add("error");
+        for (String video : inputVideos) {
+            commands.add("-i");
+            commands.add(video);
+        }
+        commands.add("-c");
+        commands.add("copy");
+        int counter = 0;
+        for (int i = 0; i < inputVideos.size(); i++) {
+            commands.add("-map");
+            commands.add("%d:v:0".formatted(counter++));
+        }
+        for (String audio : inputAudios) {
+            commands.add("-map");
+            commands.add("%d:a:0".formatted(counter++));
+        }
+        commands.add("-single_file");
+        commands.add("1");
+        commands.add("-adaptation_sets");
+        commands.add("id=0,streams=v id=1,streams=a");
+        commands.add("-dash_segment_type");
+        commands.add("-single_file_name");
+        commands.add(singleFileTemplate);
+        commands.add("mp4");
+        commands.add("-f");
+        commands.add(outputFile.getAbsolutePath());
+
+
+        ProcessBuilder processBuilder = new ProcessBuilder(commands);
         executeTaskAndGetResult(processBuilder);
     }
 
