@@ -1,10 +1,12 @@
 package com.inkneko.nekowindow.video.service;
 
+import com.inkneko.nekowindow.api.video.dto.UpdateVideoResourceConversionStateDTO;
 import com.inkneko.nekowindow.video.dto.CreateVideoPostDTO;
 import com.inkneko.nekowindow.video.dto.UpdatePostBriefDTO;
 import com.inkneko.nekowindow.video.entity.PartitionInfo;
 import com.inkneko.nekowindow.video.entity.PartitionRecommendTag;
 import com.inkneko.nekowindow.video.entity.VideoPost;
+import com.inkneko.nekowindow.video.entity.VideoPostResource;
 import com.inkneko.nekowindow.video.vo.CreateVideoPostVO;
 import com.inkneko.nekowindow.video.vo.VideoPostBriefVO;
 import com.inkneko.nekowindow.video.vo.VideoPostDetailVO;
@@ -82,4 +84,10 @@ public interface VideoService {
      */
     void updatePostBrief(UpdatePostBriefDTO dto, Long uid);
 
+    /**
+     * 更新视频资源信息
+     *
+     * @param dto 更新内容
+     */
+    void updateVideoPostResourceConversionState(UpdateVideoResourceConversionStateDTO dto);
 }

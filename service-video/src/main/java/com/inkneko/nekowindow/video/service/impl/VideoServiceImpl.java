@@ -8,6 +8,7 @@ import com.inkneko.nekowindow.api.oss.client.OssFeignClient;
 import com.inkneko.nekowindow.api.oss.vo.UploadRecordVO;
 import com.inkneko.nekowindow.api.user.client.UserFeignClient;
 import com.inkneko.nekowindow.api.user.vo.UserVo;
+import com.inkneko.nekowindow.api.video.dto.UpdateVideoResourceConversionStateDTO;
 import com.inkneko.nekowindow.common.ServiceException;
 import com.inkneko.nekowindow.video.config.OssEndpointConfig;
 import com.inkneko.nekowindow.video.dto.CreateVideoPostDTO;
@@ -166,7 +167,7 @@ public class VideoServiceImpl implements VideoService {
                 null,
                 0,
                 "",
-                "",
+                0,
                 dto.getVideoUrl(),
                 "",
                 null,
@@ -373,5 +374,23 @@ public class VideoServiceImpl implements VideoService {
 //                throw new ServiceException(400, "视频链接不正确");
 //            }
 //        }
+    }
+
+    @Override
+    @Transactional
+    public void updateVideoPostResourceConversionState(UpdateVideoResourceConversionStateDTO dto) {
+        VideoPostResource videoPostResource = videoPostResourceMapper.selectVideoPostResourceForUpdate(dto.getVideoId());
+        if (videoPostResource != null) {
+            videoPostResource.setConvertState(dto.getConvertState());
+            videoPostResource.setConvertErrMsg(dto.getConvertErrMessage());
+            videoPostResource.setDuration(dto.getDuration());
+            videoPostResource.setDashMpdUrl(dto.getDashMpdUrl());
+            videoPostResource.setConversionAt(dto.getConversionAt());
+            videoPostResource.setVideoAdaptions(dto.getVideoAdaptions());
+            videoPostResource.setAudioAdaptions(dto.getAudioAdaptions());
+
+            // 更新数据库中的记录
+            videoPostResourceMapper.updateById(videoPostResource);
+        }
     }
 }
