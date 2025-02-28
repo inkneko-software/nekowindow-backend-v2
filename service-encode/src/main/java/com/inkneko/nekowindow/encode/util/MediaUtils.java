@@ -203,7 +203,6 @@ public class MediaUtils {
         ffmpeg -f concat -i 1080phigh.txt -c copy -sc_threshold 0 -map 0 output-1080phigh.mp4
          */
 
-        File videoListFile = File.createTempFile("", "txt");
         ProcessBuilder processBuilder = new ProcessBuilder(
                 "ffmpeg",
                 "-y",
@@ -239,6 +238,10 @@ public class MediaUtils {
             commands.add("-i");
             commands.add(video);
         }
+        for (String video : inputAudios) {
+            commands.add("-i");
+            commands.add(video);
+        }
         commands.add("-c");
         commands.add("copy");
         int counter = 0;
@@ -255,10 +258,11 @@ public class MediaUtils {
         commands.add("-adaptation_sets");
         commands.add("id=0,streams=v id=1,streams=a");
         commands.add("-dash_segment_type");
+        commands.add("mp4");
         commands.add("-single_file_name");
         commands.add(singleFileTemplate);
-        commands.add("mp4");
         commands.add("-f");
+        commands.add("dash");
         commands.add(outputFile.getAbsolutePath());
 
 
@@ -268,7 +272,7 @@ public class MediaUtils {
 
     private static void executeTaskAndGetResult(ProcessBuilder processBuilder) throws IOException, InterruptedException, ServiceException {
         Process process = processBuilder.start();
-
+        log.info("执行命令: {}", process.info().commandLine().toString());
         StringBuilder stdoutStringBuilder = new StringBuilder();
         StringBuilder stderrStringBuilder = new StringBuilder();
         Thread stdoutReadingThead = new Thread(new Runnable() {
