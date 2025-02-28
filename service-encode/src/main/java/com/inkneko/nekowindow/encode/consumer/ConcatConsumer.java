@@ -8,7 +8,6 @@ import com.inkneko.nekowindow.common.util.OssUtils;
 import com.inkneko.nekowindow.encode.config.EncodeConfig;
 import com.inkneko.nekowindow.encode.config.S3Config;
 import com.inkneko.nekowindow.encode.dto.ConcatRequestDTO;
-import com.inkneko.nekowindow.encode.dto.VideoSegmentEncodeDTO;
 import com.inkneko.nekowindow.encode.entity.AudioEncodeTask;
 import com.inkneko.nekowindow.encode.entity.VideoEncodeTask;
 import com.inkneko.nekowindow.encode.service.EncodeService;
@@ -17,8 +16,6 @@ import com.rabbitmq.client.Channel;
 import io.minio.DownloadObjectArgs;
 import io.minio.MinioClient;
 import io.minio.UploadObjectArgs;
-import io.minio.errors.ErrorResponseException;
-import io.minio.errors.MinioException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -112,7 +109,7 @@ public class ConcatConsumer {
                     }
                     fileWriter.write(stringBuilder.toString());
                 }
-                File outputFile = new File(dashRootDir, "%d-%d-".formatted(concatRequestDTO.getVideoId(), qualityCode)+ ".mp4");
+                File outputFile = new File(dashRootDir, "%d-%d-".formatted(concatRequestDTO.getVideoId(), qualityCode) + ".mp4");
                 try {
                     MediaUtils.concatVideo(inputVideosTxtFile, outputFile);
                     qualityVideoFilesMap.put(qualityCode, outputFile);
@@ -144,7 +141,7 @@ public class ConcatConsumer {
                 String objectKey = ossLink.key;
                 String filename = objectKey.substring(objectKey.lastIndexOf("/") + 1, objectKey.lastIndexOf("."));
                 String ext = objectKey.substring(objectKey.lastIndexOf("."));
-                File audioFile = new File(dashRootDir, filename+ ext));
+                File audioFile = new File(dashRootDir, filename + ext);
                 audioFile.delete();
 
                 minioClient.downloadObject(DownloadObjectArgs.builder().bucket(s3Config.getBucket()).object(objectKey).filename(audioFile.getAbsolutePath()).build());
