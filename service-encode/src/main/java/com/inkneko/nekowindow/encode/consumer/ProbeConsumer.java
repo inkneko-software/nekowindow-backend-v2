@@ -85,8 +85,7 @@ public class ProbeConsumer {
                         null,
                         null,
                         null,
-                        "unknown",
-                        "unknown"
+                        null
                 ));
                 channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
                 return;
@@ -96,11 +95,15 @@ public class ProbeConsumer {
              * 第二步，获取帧率，用于判断是否生成60帧视频。
              *
              * 帧率格式有两种，整数型（如24），或者NTSC格式（如24000/1001）
+             *
+             * 2025-02-26：目前看来还有两种，23.967, 24/1
+             *
+             * //TODO: 处理23.967（24000/1001）格式
              */
             String frameRateString = videoStream.getRFrameRate();
             Integer frameRate = null;
             Pattern ratioFrameRatePattern = Pattern.compile("(\\d+)/1001");
-            Pattern numericFrameRatePattern = Pattern.compile("(\\d+)");
+            Pattern numericFrameRatePattern = Pattern.compile("(\\d+)(/1)*");
 
             Matcher ratioMatcher = ratioFrameRatePattern.matcher(frameRateString);
             Matcher numericFrameRateMatcher = numericFrameRatePattern.matcher(frameRateString);
@@ -122,8 +125,7 @@ public class ProbeConsumer {
                         null,
                         null,
                         null,
-                        "unknown",
-                        "unknown"
+                        null
                 ));
                 channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
                 return;
@@ -256,7 +258,7 @@ public class ProbeConsumer {
              */
             List<AudioEncodeParameter> audioAdaptionList = new ArrayList<>();
             if (audioStream != null) {
-                int audioBitrate = Integer.parseInt(audioStream.getBitRate());
+                int audioBitrate =  audioStream.getBitRate() != null ? Integer.parseInt(audioStream.getBitRate()) : 0;
                 if (audioBitrate >= 320 * 1000) {
                     audioAdaptionList.add(new AudioEncodeParameter(
                             "320k",
