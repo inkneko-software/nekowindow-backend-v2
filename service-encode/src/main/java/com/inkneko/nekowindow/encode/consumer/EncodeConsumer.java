@@ -100,6 +100,7 @@ public class EncodeConsumer {
                                 .contentType("video/mp4")
                                 .build()
                 );
+                boolean ignored = tmpOutputFile.delete();
 
                 RLock taskLock = redissonClient.getLock(
                         String.format("EncodeService.CheckVideoConcatTaskLock.%d", videoSegmentEncodeDTO.getVideoId())
@@ -173,6 +174,7 @@ public class EncodeConsumer {
                                 .contentType("audio/mp4")
                                 .build()
                 );
+                boolean ignored = tmpOutputFile.delete();
 
                 RLock taskLock = redissonClient.getLock(
                         String.format("EncodeService.CheckVideoConcatTaskLock.%d", audioEncodeDTO.getVideoId())

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.inkneko.nekowindow.api.video.client.VideoFeignClient;
 import com.inkneko.nekowindow.api.video.dto.UpdateVideoResourceConversionStateDTO;
 import com.inkneko.nekowindow.common.ServiceException;
+import com.inkneko.nekowindow.common.util.OssUtils;
 import com.inkneko.nekowindow.encode.config.EncodeConfig;
 import com.inkneko.nekowindow.encode.config.S3Config;
 import com.inkneko.nekowindow.encode.dto.ConcatRequestDTO;
@@ -13,6 +14,7 @@ import com.inkneko.nekowindow.encode.entity.VideoEncodeTask;
 import com.inkneko.nekowindow.encode.service.EncodeService;
 import com.inkneko.nekowindow.encode.util.MediaUtils;
 import com.rabbitmq.client.Channel;
+import io.minio.DownloadObjectArgs;
 import io.minio.MinioClient;
 import io.minio.UploadObjectArgs;
 import io.minio.errors.ErrorResponseException;
@@ -49,6 +51,7 @@ public class ConcatConsumer {
     public void concat(Channel channel, Message message) {
         ObjectMapper objectMapper = new ObjectMapper();
         ConcatRequestDTO concatRequestDTO;
+
         try {
             concatRequestDTO = objectMapper.readValue(message.getBody(), ConcatRequestDTO.class);
         } catch (IOException e) {
@@ -64,6 +67,9 @@ public class ConcatConsumer {
         }
 
         log.info("收到合并请求：{}", concatRequestDTO);
+        //即将合并的临时文件的根目录
+        File dashRootDir = new File(System.getProperty("java.io.tmpdir") + "/dash-" + concatRequestDTO.getVideoId());
+        boolean ignored = dashRootDir.mkdirs();
 
 
         //1. 查询指定videoId的转码任务，包括视频与音频任务，根据质量代码进行分类
@@ -82,15 +88,31 @@ public class ConcatConsumer {
             //根据分段进行排序
             qualityVideoEncodeTaskList.sort(Comparator.comparingInt(VideoEncodeTask::getSegmentIndex));
             try {
-                File inputVideosTxtFile = File.createTempFile("concat_info-%d-%d-".formatted(concatRequestDTO.getVideoId(), qualityCode), "txt");
+                File inputVideosTxtFile = new File(dashRootDir, "concat_info-%d-%d-".formatted(concatRequestDTO.getVideoId(), qualityCode) + ".txt");
                 try (FileWriter fileWriter = new FileWriter(inputVideosTxtFile)) {
                     StringBuilder stringBuilder = new StringBuilder();
+
                     for (VideoEncodeTask videoEncodeTask : qualityVideoEncodeTaskList) {
-                        stringBuilder.append("file %s\n".formatted(videoEncodeTask.getResultVideoUrl()));
+                        OssUtils.OssLink ossLink = OssUtils.url(videoEncodeTask.getResultVideoUrl());
+                        String objectKey = ossLink.key;
+                        String filename = objectKey.substring(objectKey.lastIndexOf("/") + 1, objectKey.lastIndexOf("."));
+                        String ext = objectKey.substring(objectKey.lastIndexOf("."));
+
+                        File videoSegmentFile = new File(dashRootDir, filename + ext);
+                        //不能覆盖已有的文件
+                        videoSegmentFile.delete();
+                        try {
+                            minioClient.downloadObject(DownloadObjectArgs.builder().bucket(s3Config.getBucket()).object(objectKey).filename(videoSegmentFile.getAbsolutePath()).build());
+                        } catch (Exception e) {
+                            log.error("下载分片文件时出现错误：", e);
+                            return;
+                        }
+                        //ffmpeg -f concat 只允许文件名，不能包含目录
+                        stringBuilder.append("file %s%s\n".formatted(filename, ext));
                     }
                     fileWriter.write(stringBuilder.toString());
                 }
-                File outputFile = File.createTempFile("%d-%d-".formatted(concatRequestDTO.getVideoId(), qualityCode), "mp4");
+                File outputFile = new File(dashRootDir, "%d-%d-".formatted(concatRequestDTO.getVideoId(), qualityCode)+ ".mp4");
                 try {
                     MediaUtils.concatVideo(inputVideosTxtFile, outputFile);
                     qualityVideoFilesMap.put(qualityCode, outputFile);
@@ -114,11 +136,26 @@ public class ConcatConsumer {
         }
 
         //3. 生成DASH文件
-        List<String> concatFiles = qualityVideoFilesMap.values().stream().map(File::getAbsolutePath).toList();
-        List<String> audioFiles = audioEncodeTasks.stream().map(AudioEncodeTask::getResultAudioUrl).toList();
+        List<String> concatFiles = qualityVideoFilesMap.keySet().stream().sorted().map(qualityCode -> qualityVideoFilesMap.get(qualityCode).getAbsolutePath()).toList();
+        List<String> audioFiles = new ArrayList<>();
+        for (AudioEncodeTask audioEncodeTask : audioEncodeTasks.stream().sorted(Comparator.comparingInt(AudioEncodeTask::getAudioQualityCode)).toList()) {
+            try {
+                OssUtils.OssLink ossLink = OssUtils.url(audioEncodeTask.getResultAudioUrl());
+                String objectKey = ossLink.key;
+                String filename = objectKey.substring(objectKey.lastIndexOf("/") + 1, objectKey.lastIndexOf("."));
+                String ext = objectKey.substring(objectKey.lastIndexOf("."));
+                File audioFile = new File(dashRootDir, filename+ ext));
+                audioFile.delete();
+
+                minioClient.downloadObject(DownloadObjectArgs.builder().bucket(s3Config.getBucket()).object(objectKey).filename(audioFile.getAbsolutePath()).build());
+                audioFiles.add(audioFile.getAbsolutePath());
+            } catch (Exception e) {
+                log.error("下载音频流时出现错误：", e);
+                return;
+            }
+        }
         try {
-            File dashRootDir = new File(System.getProperty("java.io.tmpdir") + "/dash-" + concatRequestDTO.getVideoId());
-            boolean ignored = dashRootDir.mkdirs();
+
             //DASH描述文件的存放位置
 
             File dashMpdFile = new File(dashRootDir, "representations.mpd");
@@ -158,6 +195,9 @@ public class ConcatConsumer {
                         "",
                         ""
                 ));
+
+                dashRootDir.delete();
+
             } catch (Exception e) {
                 log.error("在上传DASH内容时发生异常：", e);
                 return;
@@ -174,7 +214,6 @@ public class ConcatConsumer {
             channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
         } catch (IOException e) {
             log.error("消息ack时发生IOException: ", e);
-            return;
         }
     }
 }
