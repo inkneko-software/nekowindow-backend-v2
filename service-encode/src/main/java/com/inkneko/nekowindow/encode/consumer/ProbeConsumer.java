@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -322,6 +323,17 @@ public class ProbeConsumer {
                 encodeService.saveAudioEncodeTask(new AudioEncodeTask(audioEncodeDTO));
                 encodeProducer.produceAudioEncodeMessage(audioEncodeDTO);
             }
+
+            videoFeignClient.updateVideoResourceConversionState(new UpdateVideoResourceConversionStateDTO(
+                    probeRequestDTO.getVideoId(),
+                    1,
+                    null,
+                    (int)duration,
+                    null,
+                    LocalDateTime.now(),
+                    null,
+                    null
+            ));
 
             channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
         } catch (IOException e) {

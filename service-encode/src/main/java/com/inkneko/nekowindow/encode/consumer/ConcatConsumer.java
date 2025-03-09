@@ -63,6 +63,18 @@ public class ConcatConsumer {
             return;
         }
 
+        //更新转码状态为正在合并
+        videoFeignClient.updateVideoResourceConversionState(new UpdateVideoResourceConversionStateDTO(
+                concatRequestDTO.getVideoId(),
+                2,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        ));
+
         log.info("收到合并请求：{}", concatRequestDTO);
         //即将合并的临时文件的根目录
         File dashRootDir = new File(System.getProperty("java.io.tmpdir") + "/dash-" + concatRequestDTO.getVideoId());
@@ -182,6 +194,8 @@ public class ConcatConsumer {
                     );
                 }
 
+                log.info("适配代码列表 {}", String.join(",", audioEncodeTasks.stream().sorted().map(Object::toString).toList()));
+
                 videoFeignClient.updateVideoResourceConversionState(new UpdateVideoResourceConversionStateDTO(
                         concatRequestDTO.getVideoId(),
                         3,
@@ -189,8 +203,8 @@ public class ConcatConsumer {
                         null,
                         String.format("%s/%s/video/dash/%d/%s", s3Config.getEndpoint(), s3Config.getBucket(), concatRequestDTO.getVideoId(), dashMpdFile.getName()),
                         null,
-                        "",
-                        ""
+                        String.join(",", qualityVideoFilesMap.keySet().stream().sorted().map(Object::toString).toList()),
+                        String.join(",", audioEncodeTasks.stream().sorted().map(task->task.getAudioQualityCode().toString()).toList())
                 ));
 
                 dashRootDir.delete();
