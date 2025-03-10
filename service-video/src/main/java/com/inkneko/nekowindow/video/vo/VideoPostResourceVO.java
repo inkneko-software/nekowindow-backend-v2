@@ -23,10 +23,19 @@ public class VideoPostResourceVO {
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String dashMpdUrl;
 
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    private String videoAdaptions;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    private String audioAdaptions;
+
+
     public VideoPostResourceVO(VideoPostResource videoPostResource) {
         this.videoId = videoPostResource.getVideoId();
         this.title = videoPostResource.getTitle();
         this.visit = videoPostResource.getVisit();
-        this.dashMpdUrl = videoPostResource.getSourceVideoUrl();
+        this.dashMpdUrl = videoPostResource.getDashMpdUrl();
+        this.videoAdaptions = videoPostResource.getVideoAdaptions();
+        this.audioAdaptions = videoPostResource.getAudioAdaptions();
     }
 }
