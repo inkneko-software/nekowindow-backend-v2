@@ -60,7 +60,7 @@ public class VideoController {
     @GetMapping("/getVideoPostBrief")
     @Operation(summary = "查询视频信息")
     public Response<VideoPostBriefVO> getVideoPostBrief(@RequestParam Long nkid) {
-        return new Response<>("ok", videoService.getVideoPost(nkid));
+        return new Response<>("ok", videoService.getVideoPostBrief(nkid));
     }
 
     @GetMapping("/getVideoPostDetail")
@@ -109,11 +109,11 @@ public class VideoController {
         return new Response<>("ok", videoService.getPartitionVideos(partitionId, page, size));
     }
 
-    @GetMapping("/getUploadedVideos")
+    @GetMapping("/getUserPosts")
     @Operation(summary = "获取已上传视频列表")
-    public Response<List<UserUploadedVideoStatisticsVO>> getUserPosts(@RequestParam Long uid, @RequestParam(defaultValue = "1") Long page, @RequestParam(defaultValue = "20") Long size){
+    public Response<List<VideoPostBriefVO>> getUserPosts(@RequestParam Long uid, @RequestParam(defaultValue = "1") Long page, @RequestParam(defaultValue = "20") Long size){
         List<VideoPost> userVideoPosts = videoService.getUploadedVideoPosts(uid, page, size);
-        List<UserUploadedVideoStatisticsVO> convertedVos = userVideoPosts.stream().map(UserUploadedVideoStatisticsVO::new).toList();
+        List<VideoPostBriefVO> convertedVos = userVideoPosts.stream().map(post->videoService.getVideoPostBrief(post.getNkid())).toList();
         return new Response<>("ok", convertedVos);
     }
 
