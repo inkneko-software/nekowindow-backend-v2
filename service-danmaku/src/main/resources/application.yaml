@@ -1,0 +1,11 @@
+server:
+  port: 8300
+  forward-headers-strategy: framework
+spring:
+  application:
+    name: nekowindow-service-danmaku
+  cloud:
+    nacos:
+      server-addr: 10.200.0.20:8848
+  config:
+    import: nacos:nekowindow-service-danmaku.yaml?refresh=true

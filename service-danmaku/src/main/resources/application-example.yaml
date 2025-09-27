@@ -1,0 +1,28 @@
+server:
+  port: 8300
+  forward-headers-strategy: framework
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://10.200.0.1:3306/nekowindow_danmaku
+    username: nekowindow_dev
+    password: password
+  application:
+    name: nekowindow-service-danmaku
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 10.200.0.1:8848
+        group: dev
+  data:
+    redis:
+      host: 10.200.0.1
+      port: 6379
+
+springdoc:
+  swagger-ui:
+    path: "/swagger/danmaku/swagger-ui.html"
+  api-docs:
+    path: "/swagger/danmaku/api-docs"
+
