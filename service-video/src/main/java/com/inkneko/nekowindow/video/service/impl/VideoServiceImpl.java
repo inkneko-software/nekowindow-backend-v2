@@ -178,7 +178,7 @@ public class VideoServiceImpl implements VideoService {
         videoPostResourceMapper.insert(videoPostResource);
 
         //发布转码任务
-        //encodeFeignClient.parseSourceVideo(dto.getVideoUrl());
+        encodeFeignClient.parseSourceVideo(videoPostResource.getVideoId(), dto.getVideoUrl());
         return new CreateVideoPostVO(videoPost.getNkid());
     }
 
@@ -189,28 +189,20 @@ public class VideoServiceImpl implements VideoService {
      * @return
      */
     @Override
-    public VideoPostBriefVO getVideoPost(Long nkid) {
+    public VideoPostBriefVO getVideoPostBrief(Long nkid) {
         VideoPost post = videoPostMapper.selectById(nkid);
-        if (post == null) {
+        if (post == null || post.getState() != 0) {
             throw new ServiceException(404, "查询稿件不存在");
         }
         List<PostTag> videoTags = postTagMapper.selectList(new LambdaQueryWrapper<PostTag>().eq(PostTag::getNkid, nkid));
         List<String> tags = videoTags.stream().map(PostTag::getTagName).collect(Collectors.toList());
         UserVo userVo = userFeignClient.get(post.getUid());
         UploadUserVO uploadUserVo = new UploadUserVO(userVo.getUsername(), userVo.getUid(), userVo.getSign(), userVo.getFans(), userVo.getAvatarUrl());
-        List<VideoPostResourceVO> videosVos = videoPostResourceMapper.selectList(new LambdaQueryWrapper<VideoPostResource>().eq(VideoPostResource::getNkid, post.getNkid()))
-                .stream()
-                .map(videoPostResource -> new VideoPostResourceVO(videoPostResource.getVideoId(), videoPostResource.getTitle(), videoPostResource.getVisit(), videoPostResource.getSourceVideoUrl()))
-                .toList();
 
         return new VideoPostBriefVO(
-                post.getNkid(),
-                post.getTitle(),
-                post.getDescription(),
-                post.getCoverUrl(),
+                post,
                 uploadUserVo,
-                tags,
-                post.getCreatedAt()
+                tags
         );
     }
 
@@ -257,6 +249,20 @@ public class VideoServiceImpl implements VideoService {
         return new VideoPostDetailVO(videoPost, uploadUserVO, postResourceVOs, tags);
     }
 
+    @Override
+    public VideoPostResource getVideoPostResource(Long videoId) {
+        VideoPostResource videoPostResource = videoPostResourceMapper.selectById(videoId);
+        if (videoPostResource == null) {
+            throw new ServiceException(404, "指定视频资源不存在");
+        }
+        return videoPostResource;
+    }
+
+    @Override
+    public List<VideoPostResource> getVidePostResourcesByVideoPostId(Long nkid) {
+        return videoPostResourceMapper.selectList(new LambdaQueryWrapper<VideoPostResource>().eq(VideoPostResource::getNkid, nkid));
+    }
+
     /**
      * 查询所有的分区
      *
@@ -294,7 +300,11 @@ public class VideoServiceImpl implements VideoService {
                     UserVo userVo = userFeignClient.get(videoPost.getUid());
                     UploadUserVO uploadUserVO = new UploadUserVO(userVo.getUsername(), userVo.getUid(), userVo.getSign(), userVo.getFans(), userVo.getAvatarUrl());
                     List<String> tags = postTagMapper.selectList(new LambdaQueryWrapper<PostTag>().eq(PostTag::getNkid, videoPost.getNkid())).stream().map(PostTag::getTagName).toList();
-                    return new VideoPostBriefVO(videoPost.getNkid(), videoPost.getTitle(), videoPost.getDescription(), videoPost.getCoverUrl(), uploadUserVO, tags, videoPost.getCreatedAt());
+                    return new VideoPostBriefVO(
+                            videoPost,
+                            uploadUserVO,
+                            tags
+                    );
                 })
                 .collect(Collectors.toList());
     }
@@ -317,13 +327,9 @@ public class VideoServiceImpl implements VideoService {
             UploadUserVO uploader = new UploadUserVO(userVo.getUsername(), userVo.getUid(), userVo.getSign(), userVo.getFans(), userVo.getAvatarUrl());
             List<String> tags = postTagMapper.selectList(new LambdaQueryWrapper<PostTag>().eq(PostTag::getNkid, videoPost.getNkid())).stream().map(PostTag::getTagName).toList();
             result.add(new VideoPostBriefVO(
-                    videoPost.getNkid(),
-                    videoPost.getTitle(),
-                    videoPost.getDescription(),
-                    videoPost.getCoverUrl(),
+                    videoPost,
                     uploader,
-                    tags,
-                    videoPost.getCreatedAt()
+                    tags
             ));
         }
         return result;
@@ -391,6 +397,34 @@ public class VideoServiceImpl implements VideoService {
 
             // 更新数据库中的记录
             videoPostResourceMapper.updateById(videoPostResource);
+
+            // 更新视频的总时长
+            List<VideoPostResource> resources = videoPostResourceMapper.selectList(new LambdaQueryWrapper<VideoPostResource>().eq(VideoPostResource::getNkid, videoPostResource.getNkid()));
+            Integer totalDuration = resources.stream().mapToInt(VideoPostResource::getDuration).sum();
+            VideoPost videoPost = videoPostMapper.selectById(videoPostResource.getNkid());
+            if (videoPost != null) {
+                videoPost.setDuration(totalDuration);
+                videoPostMapper.updateById(videoPost);
+            }
         }
+
+    }
+
+    @Override
+    public VideoPost getVideoPost(Long nkid) {
+        VideoPost videoPost = videoPostMapper.selectById(nkid);
+        if (videoPost == null) {
+            throw new ServiceException(404, "稿件不存在");
+        }
+        return videoPost;
+    }
+
+    @Override
+    public List<String> getVideoPostTags(Long nkid) {
+        VideoPost videoPost = videoPostMapper.selectById(nkid);
+        if (videoPost == null) {
+            throw new ServiceException(404, "稿件不存在");
+        }
+        return postTagMapper.selectList(new LambdaQueryWrapper<PostTag>().eq(PostTag::getNkid, nkid)).stream().map(PostTag::getTagName).toList();
     }
 }

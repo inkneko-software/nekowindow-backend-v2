@@ -1,5 +1,6 @@
 package com.inkneko.nekowindow.video.vo;
 
+import com.inkneko.nekowindow.video.entity.VideoPost;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -31,5 +32,19 @@ public class VideoPostBriefVO {
     private List<String> tags;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    private Integer duration;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private Date createdAt;
+
+    public VideoPostBriefVO(VideoPost videoPost, UploadUserVO uploader, List<String> tags) {
+        this.nkid = videoPost.getNkid();
+        this.title = videoPost.getTitle();
+        this.description = videoPost.getDescription();
+        this.coverUrl = videoPost.getCoverUrl();
+        this.duration = videoPost.getDuration();
+        this.createdAt = videoPost.getCreatedAt();
+        this.uploader = uploader;
+        this.tags = tags;
+    }
 }
