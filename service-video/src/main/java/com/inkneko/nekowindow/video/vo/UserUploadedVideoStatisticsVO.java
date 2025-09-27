@@ -1,12 +1,14 @@
 package com.inkneko.nekowindow.video.vo;
 
 import com.inkneko.nekowindow.video.entity.VideoPost;
+import com.inkneko.nekowindow.video.entity.VideoPostResource;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -31,6 +33,9 @@ public class UserUploadedVideoStatisticsVO {
     String description;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    List<String> tags;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     Integer state;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
@@ -45,7 +50,10 @@ public class UserUploadedVideoStatisticsVO {
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     Date createdAt;
 
-    public UserUploadedVideoStatisticsVO(VideoPost videoPost){
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    List<UserUploadedVideoPostResourceVO> uploadedVideoPostResourceVOS;
+
+    public UserUploadedVideoStatisticsVO(VideoPost videoPost, List<String> tags, List<VideoPostResource> videoPostResources){
         this.nkid = videoPost.getNkid();
         this.title = videoPost.getTitle();
         this.coverUrl = videoPost.getCoverUrl();
@@ -53,9 +61,12 @@ public class UserUploadedVideoStatisticsVO {
         this.shared = videoPost.getShared();
         this.description = videoPost.getDescription();
         this.state = videoPost.getState();
+        this.tags = tags;
         this.partitionId = videoPost.getPartitionId();
         this.partitionName = videoPost.getPartitionName();
         this.reviewFailedReason = videoPost.getReviewFailedReason();
         this.createdAt = videoPost.getCreatedAt();
+        this.uploadedVideoPostResourceVOS = videoPostResources.stream().map(UserUploadedVideoPostResourceVO::new).toList();
+
     }
 }
