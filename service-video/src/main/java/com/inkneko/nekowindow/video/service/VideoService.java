@@ -20,16 +20,24 @@ public interface VideoService {
      *
      * @param dto 视频信息
      * @param userId 上传者
-     * @return
+     * @return 返回稿件ID
      */
     CreateVideoPostVO createVideoPost(CreateVideoPostDTO dto, Long userId);
 
     /**
      * 查询视频投稿
-     * @param nkid
-     * @return
+     *
+     * @param nkid 稿件ID
+     * @return 指定稿件信息
      */
-    VideoPostBriefVO getVideoPost(Long nkid);
+    VideoPost getVideoPost(Long nkid);
+
+    /**
+     * 查询视频投稿简略信息，包括上传者，标签
+     * @param nkid 稿件ID
+     * @return 稿件
+     */
+    VideoPostBriefVO getVideoPostBrief(Long nkid);
 
     /**
      * 获取指定用户的上传视频
@@ -46,6 +54,20 @@ public interface VideoService {
      * @return 视频详细信息
      */
     VideoPostDetailVO getVideoPostDetail(Long nkid);
+
+    /**
+     * 获取指定视频资源信息
+     * @param videoId 视频资源ID
+     * @return 对应的视频资源
+     */
+    VideoPostResource getVideoPostResource(Long videoId);
+
+    /**
+     * 获取指定稿件的视频资源列表
+     * @param nkid 稿件ID
+     * @return 指定稿件的视频资源列表
+     */
+    List<VideoPostResource> getVidePostResourcesByVideoPostId(Long nkid);
 
     /**
      * 查询所有的分区
@@ -90,4 +112,11 @@ public interface VideoService {
      * @param dto 更新内容
      */
     void updateVideoPostResourceConversionState(UpdateVideoResourceConversionStateDTO dto);
+
+    /**
+     * 获取稿件的标签
+     * @param nkid 视频ID
+     * @return 标签列表
+     */
+    List<String> getVideoPostTags(Long nkid);
 }
