@@ -9,7 +9,6 @@ import com.inkneko.nekowindow.video.vo.UserUploadedVideoStatisticsVO;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -26,15 +25,30 @@ public class VideoManagementController {
     public Response<List<UserUploadedVideoStatisticsVO>> getUploadedVideos(@RequestParam(defaultValue = "1") Long page, @RequestParam(defaultValue = "20") Long size){
         Long uid = GatewayAuthUtils.auth();
         List<VideoPost> userVideoPosts = videoService.getUploadedVideoPosts(uid, page, size);
-        List<UserUploadedVideoStatisticsVO> convertedVos = userVideoPosts.stream().map(UserUploadedVideoStatisticsVO::new).toList();
+        List<UserUploadedVideoStatisticsVO> convertedVos = userVideoPosts.stream()
+                .map(post -> {
+                    List<String> tags = videoService.getVideoPostTags(post.getNkid());
+                    return new UserUploadedVideoStatisticsVO(
+                            post,
+                            tags,
+                            videoService.getVidePostResourcesByVideoPostId(post.getNkid())
+                    );
+                })
+                .toList();
         return new Response<>("ok", convertedVos);
     }
 
     @PostMapping("/updateVideoPost")
-    @Operation(summary = "更新已上传的视频信息")
-    public Response<?> updateVideoPost(@RequestBody UpdatePostBriefDTO dto){
+    @Operation(summary = "更新已上传的视频信息", description = "若更新成功，返回已更新的当前视频信息")
+    public Response<UserUploadedVideoStatisticsVO> updateVideoPost(@RequestBody UpdatePostBriefDTO dto){
         Long uid = GatewayAuthUtils.auth();
         videoService.updatePostBrief(dto, uid);
-        return new Response<>("ok");
+        List<String> tags = videoService.getVideoPostTags(dto.getNkid());
+        UserUploadedVideoStatisticsVO vo = new UserUploadedVideoStatisticsVO(
+                videoService.getVideoPost(dto.getNkid()),
+                tags,
+                videoService.getVidePostResourcesByVideoPostId(dto.getNkid())
+        );
+        return new Response<>("ok", vo);
     }
 }
