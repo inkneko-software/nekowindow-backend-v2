@@ -38,5 +38,11 @@
             <artifactId>common-service-core</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>com.inkneko.nekowindow.api.oss</groupId>
+            <artifactId>api-oss</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 </project>
