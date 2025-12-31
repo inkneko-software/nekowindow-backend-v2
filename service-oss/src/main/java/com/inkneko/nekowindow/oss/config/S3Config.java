@@ -46,7 +46,7 @@ public class S3Config {
     }
 
     @Bean
-    public S3Presigner s3Presigner(AwsCredentials credentials){
+    public S3Presigner s3Presigner(AwsCredentials credentials) {
         return S3Presigner.builder()
                 .credentialsProvider(StaticCredentialsProvider.create(credentials))
                 .region(Region.of("us-east-1"))
@@ -62,7 +62,7 @@ public class S3Config {
             s3Client.createBucket(CreateBucketRequest.builder().bucket("nekowindow").build());
         }
 
-        s3Client.putBucketPolicy(policy->{
+        s3Client.putBucketPolicy(policy -> {
             policy.bucket("nekowindow")
                     .policy("""
                             {
@@ -72,13 +72,12 @@ public class S3Config {
                                   "Effect": "Allow",
                                   "Principal": "*",
                                   "Action": "s3:GetObject",
-                                  "Resource": "arn:aws:s3:::nekowindow/upload/cover/*"
-                                },
-                                {
-                                  "Effect": "Allow",
-                                  "Principal": "*",
-                                  "Action": "s3:GetObject",
-                                  "Resource": "arn:aws:s3:::nekowindow/upload/video/*"
+                                  "Resource": [
+                                      "arn:aws:s3:::nekowindow/upload/cover/*",
+                                      "arn:aws:s3:::nekowindow/upload/video/*",
+                                      "arn:aws:s3:::nekowindow/upload/avatar/*",
+                                      "arn:aws:s3:::nekowindow/video/*"
+                                  ]
                                 }
                               ]
                             }""");
@@ -86,7 +85,7 @@ public class S3Config {
     }
 
     @Bean
-    public MinioClient minioClient(){
+    public MinioClient minioClient() {
         return MinioClient.builder().endpoint(endpoint).credentials(accessKey, secretKey).build();
     }
 
