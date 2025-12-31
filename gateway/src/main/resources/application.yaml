@@ -3,8 +3,8 @@ spring:
     name: nekowindow-gateway
   cloud:
     nacos:
-      server-addr: 10.200.0.1:8848
+      server-addr: 10.200.0.20:8848
   config:
     import: nacos:nekowindow-gateway.yaml?refresh=true
 server:
-  port: 80
+  port: 3080
