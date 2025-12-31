@@ -294,7 +294,7 @@ public class VideoServiceImpl implements VideoService {
     public List<VideoPostBriefVO> getPartitionRecommendVideos(Integer partitionId, Long uid) {
 
         return videoPostMapper
-                .selectList(new LambdaQueryWrapper<VideoPost>().eq(VideoPost::getPartitionId, partitionId).last("LIMIT 10"))
+                .selectList(new LambdaQueryWrapper<VideoPost>().eq(VideoPost::getPartitionId, partitionId).eq(VideoPost::getState, 0).last("LIMIT 10"))
                 .stream()
                 .map(videoPost -> {
                     UserVo userVo = userFeignClient.get(videoPost.getUid());
@@ -319,7 +319,7 @@ public class VideoServiceImpl implements VideoService {
      */
     @Override
     public List<VideoPostBriefVO> getPartitionVideos(Integer partitionId, Long page, Long size) {
-        IPage<VideoPost> videoPostPage = videoPostMapper.selectPage(new Page<>(page, size), new LambdaQueryWrapper<VideoPost>().eq(VideoPost::getPartitionId, partitionId));
+        IPage<VideoPost> videoPostPage = videoPostMapper.selectPage(new Page<>(page, size), new LambdaQueryWrapper<VideoPost>().eq(VideoPost::getPartitionId, partitionId).eq(VideoPost::getState, 0));
         List<VideoPost> videoPosts = videoPostPage.getRecords();
         List<VideoPostBriefVO> result = new ArrayList<>();
         for (VideoPost videoPost : videoPosts) {
