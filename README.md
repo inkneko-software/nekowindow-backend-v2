@@ -5,7 +5,7 @@
 
 后端系统使用Spring Cloud相关技术进行实现
 
-## 服务配置
+## 1.服务配置
 
 各服务均使用nacos作为服务注册中心和配置中心
 
@@ -29,13 +29,17 @@ java -jar service-xxx.jar \
      --spring.cloud.nacos.config.group=dev
 ```
 
-## 构建
+## 2.构建
 
 执行maven构建
 
 `mvn_tencent_mirror_settings.xml`中已指定腾讯云镜像，如在其他环境请参考并调整
+
+切换到项目根目录的上一级，执行以下命令：
+
 ```bash
 docker run -it -v ./nekowindow-backend-v2:/nekowindow-backend-v2 maven:3.8.7-openjdk-18-slim bash
+cd /nekowindow-backend-v2
 mvn -s mvn_tencent_mirror_settings.xml -f pom.xml clean package -Dmaven.test.skip=true
 ```
 
@@ -43,13 +47,17 @@ mvn -s mvn_tencent_mirror_settings.xml -f pom.xml clean package -Dmaven.test.ski
 ```python
 #打包
 import os
-targets=['gateway', 'service-auth', 'service-user', 'service-oss', 'service-video']
+targets=['gateway', 'service-auth', 'service-user', 'service-oss', 'service-video', 'service-danmaku']
 
 for target in targets:
     os.system("docker build --build-arg SERVICE_NAME=%s -t nekowindow-%s ." % (target,target))
+
+#使用Dockerfile.encode 单独打包service-encode
+os.system("docker build --build-arg SERVICE_NAME=service-encode -t nekowindow-service-encode -f Dockerfile.encode .")
+
 ```
 
-## 部署
+## 3.部署
 
 以下为docker-compose.yaml的参考配置：
 
@@ -87,4 +95,16 @@ services:
       - SPRING_CLOUD_NACOS_SERVERADDR=10.200.0.1
       - SPRING_CLOUD_NACOS_DISCOVERY_GROUP=prod
       - SPRING_CLOUD_NACOS_CONFIG_GROUP=prod
+  service-danmaku:
+    image: nekowindow-service-danmaku
+    environment:
+      - SPRING_CLOUD_NACOS_SERVERADDR=10.200.0.1
+      - SPRING_CLOUD_NACOS_DISCOVERY_GROUP=prod
+      - SPRING_CLOUD_NACOS_CONFIG_GROUP=prod
+  service-encode:
+      image: nekowindow-service-encode
+      environment:
+        - SPRING_CLOUD_NACOS_SERVERADDR=10.200.0.1
+        - SPRING_CLOUD_NACOS_DISCOVERY_GROUP=prod
+        - SPRING_CLOUD_NACOS_CONFIG_GROUP=prod
 ```
