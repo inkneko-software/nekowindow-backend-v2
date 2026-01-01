@@ -17,6 +17,7 @@ import com.inkneko.nekowindow.video.entity.*;
 import com.inkneko.nekowindow.video.mapper.*;
 import com.inkneko.nekowindow.video.service.VideoService;
 import com.inkneko.nekowindow.video.vo.*;
+import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,7 +42,7 @@ public class VideoServiceImpl implements VideoService {
     EncodeFeignClient encodeFeignClient;
     OssFeignClient ossFeignClient;
     UserFeignClient userFeignClient;
-
+    URI configURI;
     public VideoServiceImpl(
             VideoPostMapper videoPostMapper,
             OssFeignClient ossFeignClient,
@@ -62,27 +63,22 @@ public class VideoServiceImpl implements VideoService {
         this.videoPostResourceMapper = videoPostResourceMapper;
         this.ossEndpointConfig = ossEndpointConfig;
         this.encodeFeignClient = encodeFeignClient;
+
+        try {
+            configURI = new URI(ossEndpointConfig.endpoint);
+        } catch (Exception e) {
+            throw new BeanInitializationException("OSS Endpoint配置的URI格式错误", e);
+        }
     }
 
     /**
      * 检查用户提供的视频URL是否为站内资源，并且是上传者
      *
-     * @param url    视频的文件URL
+     * @param userURI    视频的文件URL
      * @param userId 用户id
      * @return 若文件为站内资源，且userId为该文件的上传者，返回true，否则返回false
      */
-    private boolean isVideoUrlValid(String url, Long userId) {
-        URI configURI;
-        URI userURI;
-        try {
-            userURI = new URI(url);
-            configURI = new URI(ossEndpointConfig.endpoint);
-        } catch (Exception e) {
-            return false;
-        }
-        if (!userURI.getQuery().isEmpty()){
-            return false;
-        }
+    private boolean isVideoUrlValid(URI userURI, Long userId) {
         //检查链接是否为站内资源
         if (!userURI.getHost().equals(configURI.getHost())) {
             return false;
@@ -105,22 +101,11 @@ public class VideoServiceImpl implements VideoService {
     /**
      * 检查用户提供的封面URL是否为站内资源，并且是上传者
      *
-     * @param url    封面图片的文件URL
+     * @param userURI    封面图片的文件URL
      * @param userId 用户id
      * @return 若文件为站内资源，且userId为该文件的上传者，返回true，否则返回false
      */
-    private boolean isCoverUrlValid(String url, Long userId) {
-        URI configURI;
-        URI userURI;
-        try {
-            userURI = new URI(url);
-            configURI = new URI(ossEndpointConfig.endpoint);
-        } catch (Exception e) {
-            return false;
-        }
-        if (!userURI.getQuery().isEmpty()){
-            return false;
-        }
+    private boolean isCoverUrlValid(URI userURI, Long userId) {
         //检查链接是否为站内资源
         if (!userURI.getHost().equals(configURI.getHost())) {
             return false;
@@ -145,16 +130,25 @@ public class VideoServiceImpl implements VideoService {
      *
      * @param dto    视频信息
      * @param userId 上传者
-     * @return
+     * @return 稿件信息
      */
     @Override
     @Transactional
     public CreateVideoPostVO createVideoPost(CreateVideoPostDTO dto, Long userId) {
-        if (!isCoverUrlValid(dto.getCoverUrl(), userId)) {
+        URI coverURI;
+        URI videoURI;
+        try {
+            coverURI = new URI(dto.getCoverUrl());
+            videoURI = new URI(dto.getVideoUrl());
+        } catch (Exception e) {
+            throw new ServiceException(400, "封面或视频链接格式不正确");
+        }
+
+        if (!isCoverUrlValid(coverURI, userId)) {
             throw new ServiceException(400, "封面链接不正确");
         }
 
-        if (!isVideoUrlValid(dto.getVideoUrl(), userId)) {
+        if (!isVideoUrlValid(videoURI, userId)) {
             throw new ServiceException(400, "视频链接不正确");
         }
 
@@ -176,7 +170,7 @@ public class VideoServiceImpl implements VideoService {
         videoPost.setTitle(dto.getTitle());
         videoPost.setUid(userId);
         videoPost.setDescription(dto.getDescription());
-        videoPost.setCoverUrl(dto.getCoverUrl());
+        videoPost.setCoverUrl(ossEndpointConfig.getEndpoint() + coverURI.getPath());
         videoPost.setPartitionId(dto.getPartitionId());
         videoPost.setPartitionName(partitionInfo.getPartitionName());
         videoPost.setState(0);
@@ -197,7 +191,7 @@ public class VideoServiceImpl implements VideoService {
                 0,
                 "",
                 0,
-                dto.getVideoUrl(),
+                ossEndpointConfig.getEndpoint() + videoURI.getPath(),
                 "",
                 null,
                 null,
@@ -388,11 +382,19 @@ public class VideoServiceImpl implements VideoService {
         if (dto.getDescription() != null) {
             videoPost.setDescription(dto.getDescription());
         }
+
+        URI coverURI;
+        try {
+            coverURI = new URI(dto.getCoverUrl());
+        } catch (Exception e) {
+            throw new ServiceException(400, "封面链接格式不正确");
+        }
+
         if (dto.getCoverUrl() != null) {
-            if (!isCoverUrlValid(dto.getCoverUrl(), uid)) {
+            if (!isCoverUrlValid(coverURI, uid)) {
                 throw new ServiceException(400, "封面链接不正确");
             }
-            videoPost.setCoverUrl(dto.getCoverUrl());
+            videoPost.setCoverUrl(ossEndpointConfig.getEndpoint() + coverURI.getPath());
         }
 
         videoPostMapper.updateById(videoPost);
