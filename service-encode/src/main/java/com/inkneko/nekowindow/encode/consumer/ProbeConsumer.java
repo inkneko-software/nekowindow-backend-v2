@@ -53,8 +53,9 @@ public class ProbeConsumer {
     @RabbitListener(queues = EncodeConfig.NK_PROBE_QUEUE_NAME, ackMode = "MANUAL")
     public void probe(Channel channel, Message message) {
         ObjectMapper objectMapper = new ObjectMapper();
+        ProbeRequestDTO probeRequestDTO = null;
         try {
-            ProbeRequestDTO probeRequestDTO = objectMapper.readValue(message.getBody(), ProbeRequestDTO.class);
+            probeRequestDTO = objectMapper.readValue(message.getBody(), ProbeRequestDTO.class);
             log.info("收到视频分析请求: {}", probeRequestDTO);
             ProbeResult result = encodeService.probeVideo(probeRequestDTO);
 
@@ -337,9 +338,26 @@ public class ProbeConsumer {
 
             channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
         } catch (IOException e) {
-            log.error("probe错误", e);
+            log.error("ProbeConsumer发生IOException: ", e);
         } catch (ServiceException e) {
-            log.error("");
+            if (probeRequestDTO != null){
+                videoFeignClient.updateVideoResourceConversionState(new UpdateVideoResourceConversionStateDTO(
+                        probeRequestDTO.getVideoId(),
+                        4,
+                        e.getMessage(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                ));
+                try{
+                    channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+                }catch (IOException ioException){
+                    log.error("ack错误", ioException);
+                }
+            }
+
         } catch (InterruptedException e) {
             log.error("interrupted", e);
         }
