@@ -20,6 +20,7 @@ import com.inkneko.nekowindow.video.vo.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -71,9 +72,20 @@ public class VideoServiceImpl implements VideoService {
      * @return 若文件为站内资源，且userId为该文件的上传者，返回true，否则返回false
      */
     private boolean isVideoUrlValid(String url, Long userId) {
+        URI configURI;
+        URI userURI;
+        try {
+            userURI = new URI(url);
+            configURI = new URI(ossEndpointConfig.endpoint);
+        } catch (Exception e) {
+            return false;
+        }
         //检查链接是否为站内资源
-        Pattern pattern = Pattern.compile(ossEndpointConfig.endpoint + "/nekowindow/upload/video/(.+?)");
-        Matcher matcher = pattern.matcher(url);
+        if (!userURI.getHost().equals(configURI.getHost())) {
+            return false;
+        }
+        Pattern pattern = Pattern.compile("/nekowindow/upload/video/(.+?)");
+        Matcher matcher = pattern.matcher(userURI.getPath());
         if (!matcher.matches()) {
             return false;
         }
@@ -95,9 +107,20 @@ public class VideoServiceImpl implements VideoService {
      * @return 若文件为站内资源，且userId为该文件的上传者，返回true，否则返回false
      */
     private boolean isCoverUrlValid(String url, Long userId) {
+        URI configURI;
+        URI userURI;
+        try {
+            userURI = new URI(url);
+            configURI = new URI(ossEndpointConfig.endpoint);
+        } catch (Exception e) {
+            return false;
+        }
         //检查链接是否为站内资源
-        Pattern pattern = Pattern.compile(ossEndpointConfig.endpoint + "/nekowindow/upload/cover/(.+?)");
-        Matcher matcher = pattern.matcher(url);
+        if (!userURI.getHost().equals(configURI.getHost())) {
+            return false;
+        }
+        Pattern pattern = Pattern.compile("/nekowindow/upload/cover/(.+?)");
+        Matcher matcher = pattern.matcher(userURI.getPath());
         if (!matcher.matches()) {
             return false;
         }
