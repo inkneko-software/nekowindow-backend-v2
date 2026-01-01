@@ -68,9 +68,9 @@ public class VideoServiceImpl implements VideoService {
      *
      * @param url    视频的文件URL
      * @param userId 用户id
-     * @return 若文件为站内资源，且userId为该文件的上传者，返回false，否则返回true
+     * @return 若文件为站内资源，且userId为该文件的上传者，返回true，否则返回false
      */
-    private boolean isVideoUrlInvalid(String url, Long userId) {
+    private boolean isVideoUrlValid(String url, Long userId) {
         //检查链接是否为站内资源
         Pattern pattern = Pattern.compile(ossEndpointConfig.endpoint + "/nekowindow/upload/video/(.+?)");
         Matcher matcher = pattern.matcher(url);
@@ -84,7 +84,7 @@ public class VideoServiceImpl implements VideoService {
             return false;
         }
         //检查是否为上传者
-        return !videoUploadRecordVO.getUid().equals(userId);
+        return videoUploadRecordVO.getUid().equals(userId);
     }
 
     /**
@@ -92,9 +92,9 @@ public class VideoServiceImpl implements VideoService {
      *
      * @param url    封面图片的文件URL
      * @param userId 用户id
-     * @return 若文件为站内资源，且userId为该文件的上传者，返回false，否则返回true
+     * @return 若文件为站内资源，且userId为该文件的上传者，返回true，否则返回false
      */
-    private boolean isCoverUrlInvalid(String url, Long userId) {
+    private boolean isCoverUrlValid(String url, Long userId) {
         //检查链接是否为站内资源
         Pattern pattern = Pattern.compile(ossEndpointConfig.endpoint + "/nekowindow/upload/cover/(.+?)");
         Matcher matcher = pattern.matcher(url);
@@ -108,7 +108,7 @@ public class VideoServiceImpl implements VideoService {
             return false;
         }
         //检查是否为上传者
-        return !coverUploadRecordVO.getUid().equals(userId);
+        return coverUploadRecordVO.getUid().equals(userId);
     }
 
     /**
@@ -121,11 +121,11 @@ public class VideoServiceImpl implements VideoService {
     @Override
     @Transactional
     public CreateVideoPostVO createVideoPost(CreateVideoPostDTO dto, Long userId) {
-        if (isCoverUrlInvalid(dto.getCoverUrl(), userId)) {
+        if (!isCoverUrlValid(dto.getCoverUrl(), userId)) {
             throw new ServiceException(400, "封面链接不正确");
         }
 
-        if (isVideoUrlInvalid(dto.getVideoUrl(), userId)) {
+        if (!isVideoUrlValid(dto.getVideoUrl(), userId)) {
             throw new ServiceException(400, "视频链接不正确");
         }
 
@@ -360,7 +360,7 @@ public class VideoServiceImpl implements VideoService {
             videoPost.setDescription(dto.getDescription());
         }
         if (dto.getCoverUrl() != null) {
-            if (isCoverUrlInvalid(dto.getCoverUrl(), uid)) {
+            if (!isCoverUrlValid(dto.getCoverUrl(), uid)) {
                 throw new ServiceException(400, "封面链接不正确");
             }
             videoPost.setCoverUrl(dto.getCoverUrl());
