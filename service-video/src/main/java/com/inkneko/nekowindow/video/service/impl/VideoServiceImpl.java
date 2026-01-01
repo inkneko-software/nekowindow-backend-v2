@@ -80,11 +80,14 @@ public class VideoServiceImpl implements VideoService {
         } catch (Exception e) {
             return false;
         }
+        if (!userURI.getQuery().isEmpty()){
+            return false;
+        }
         //检查链接是否为站内资源
         if (!userURI.getHost().equals(configURI.getHost())) {
             return false;
         }
-        Pattern pattern = Pattern.compile("/nekowindow/upload/video/(.+?)");
+        Pattern pattern = Pattern.compile("^/nekowindow/upload/video/(.+)$");
         Matcher matcher = pattern.matcher(userURI.getPath());
         if (!matcher.matches()) {
             return false;
@@ -115,11 +118,14 @@ public class VideoServiceImpl implements VideoService {
         } catch (Exception e) {
             return false;
         }
+        if (!userURI.getQuery().isEmpty()){
+            return false;
+        }
         //检查链接是否为站内资源
         if (!userURI.getHost().equals(configURI.getHost())) {
             return false;
         }
-        Pattern pattern = Pattern.compile("/nekowindow/upload/cover/(.+?)");
+        Pattern pattern = Pattern.compile("^/nekowindow/upload/cover/(.+)$");
         Matcher matcher = pattern.matcher(userURI.getPath());
         if (!matcher.matches()) {
             return false;
