@@ -27,7 +27,7 @@ public class OssUtils {
                 return null;
             }
 
-            return new OssLink(matcher.group(2), uri.getPath().split("/")[0], uri.getPath().substring(uri.getPath().indexOf("/", 1) + 1));
+            return new OssLink(matcher.group(2), uri.getPath().split("/")[1], uri.getPath().substring(uri.getPath().indexOf("/", 1) + 1));
         }
         return null;
     }
