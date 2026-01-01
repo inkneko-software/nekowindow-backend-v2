@@ -201,7 +201,7 @@ public class VideoServiceImpl implements VideoService {
         videoPostResourceMapper.insert(videoPostResource);
 
         //发布转码任务
-        encodeFeignClient.parseSourceVideo(videoPostResource.getVideoId(), dto.getVideoUrl());
+        encodeFeignClient.parseSourceVideo(videoPostResource.getVideoId(), ossEndpointConfig.getEndpoint() + videoURI.getPath());
         return new CreateVideoPostVO(videoPost.getNkid());
     }
 
