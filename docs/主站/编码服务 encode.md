@@ -19,6 +19,7 @@
 
 | 视频质量 | 代号 | 说明 |
 |-|-|-|
+|自动|0| 客户端专用，指定0为自动码率选择|
 |1080P 60帧| 10 | 原视频帧率>=60帧。转码后码率不高于8Mbps |
 |1080P 高码率| 11 | 原视频帧率小于60帧，但码率大于3Mbps。转码后码率不高于8Mbps |
 |1080P| 12 | 最高码率3Mbps，帧率不超过59帧 |
@@ -54,7 +55,7 @@ CREATE TABLE video_encode_task(
     result_video_url VARCHAR(255) COMMENT '转码完成的视频地址，为NULL则为未完成',
     segment_index INT NOT NULL COMMENT '分片编号，起始为0',
     segment_total INT NOT NULL COMMENT '总分片数',
-    segment_size INT NOT NULL COMMENT '分片时长，以秒为单位',
+    segment_size VARCHAR(255) NOT NULL COMMENT '分片时长，以秒为单位，针对NTSC帧率可为小数',
     target_codec VARCHAR(255) NOT NULL COMMENT '目标编码格式，如h264',
     target_bitrate VARCHAR(255) NOT NULL COMMENT '目标码率，如8M，500K',
     target_height INT NOT NULL COMMENT '目标高度，如720',
@@ -79,7 +80,7 @@ CREATE TABLE audio_encode_task(
     audio_quality_code INT NOT NULL COMMENT '音频质量代号，见表格',
     target_codec VARCHAR(255) NOT NULL COMMENT '目标编码格式',
     target_bitrate VARCHAR(255) NOT NULL COMMENT '目标码率',
-    encode_failed_reason VARCHAR(1024) NOT NULL DEFAULT '编码失败原因',
+    encode_failed_reason VARCHAR(1024) NOT NULL DEFAULT '' COMMENT '编码失败原因',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '任务创建时间',
     started_at DATETIME COMMENT '任务开始时间',
     complete_at DATETIME COMMENT '任务完成时间',
