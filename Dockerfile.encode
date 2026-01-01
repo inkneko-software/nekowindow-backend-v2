@@ -7,16 +7,15 @@ ENV SERVICE_NAME=$SERVICE_NAME
 WORKDIR /app
 
 RUN echo "deb http://mirrors.tencent.com/ubuntu/ jammy main restricted universe multiverse" > /etc/apt/sources.list \
-    && echo "deb http://mirrors.tencent.com/ubuntu/ jammy-security main restricted universe multiverse" > /etc/apt/sources.list \
-    && echo "deb http://mirrors.tencent.com/ubuntu/ jammy-updates main restricted universe multiverse" > /etc/apt/sources.list \
-    && echo "#deb http://mirrors.tencent.com/ubuntu/ jammy-proposed main restricted universe multiverse" > /etc/apt/sources.list \
-    && echo "#deb http://mirrors.tencent.com/ubuntu/ jammy-backports main restricted universe multiverse" > /etc/apt/sources.list \
-    && echo "deb-src http://mirrors.tencent.com/ubuntu/ jammy main restricted universe multiverse" > /etc/apt/sources.list \
-    && echo "deb-src http://mirrors.tencent.com/ubuntu/ jammy-security main restricted universe multiverse" > /etc/apt/sources.list \
-    && echo "deb-src http://mirrors.tencent.com/ubuntu/ jammy-updates main restricted universe multiverse" > /etc/apt/sources.list \
-    && echo "#deb-src http://mirrors.tencent.com/ubuntu/ jammy-proposed main restricted universe multiverse" > /etc/apt/sources.list \
-    && echo "#deb-src http://mirrors.tencent.com/ubuntu/ jammy-backports main restricted universe multiverse" > /etc/apt/sources.list \
-    && rm /etc/apt/sources.list.d/debian.sources \
+    && echo "deb http://mirrors.tencent.com/ubuntu/ jammy-security main restricted universe multiverse" >> /etc/apt/sources.list \
+    && echo "deb http://mirrors.tencent.com/ubuntu/ jammy-updates main restricted universe multiverse" >> /etc/apt/sources.list \
+    && echo "#deb http://mirrors.tencent.com/ubuntu/ jammy-proposed main restricted universe multiverse" >> /etc/apt/sources.list \
+    && echo "#deb http://mirrors.tencent.com/ubuntu/ jammy-backports main restricted universe multiverse" >> /etc/apt/sources.list \
+    && echo "deb-src http://mirrors.tencent.com/ubuntu/ jammy main restricted universe multiverse" >> /etc/apt/sources.list \
+    && echo "deb-src http://mirrors.tencent.com/ubuntu/ jammy-security main restricted universe multiverse" >> /etc/apt/sources.list \
+    && echo "deb-src http://mirrors.tencent.com/ubuntu/ jammy-updates main restricted universe multiverse" >> /etc/apt/sources.list \
+    && echo "#deb-src http://mirrors.tencent.com/ubuntu/ jammy-proposed main restricted universe multiverse" >> /etc/apt/sources.list \
+    && echo "#deb-src http://mirrors.tencent.com/ubuntu/ jammy-backports main restricted universe multiverse" >> /etc/apt/sources.list \
     && apt-get update \
     && apt-get install -y ffmpeg
 
