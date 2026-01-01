@@ -1,0 +1,12 @@
+server:
+  port: 8320
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: nekowindow-service-comment
+  cloud:
+    nacos:
+      server-addr: 10.200.0.20:8848
+  config:
+    import: nacos:nekowindow-service-comment.yaml?refresh=true
