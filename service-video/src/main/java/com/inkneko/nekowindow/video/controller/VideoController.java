@@ -60,13 +60,15 @@ public class VideoController {
     @GetMapping("/getVideoPostBrief")
     @Operation(summary = "查询视频信息")
     public Response<VideoPostBriefVO> getVideoPostBrief(@RequestParam Long nkid) {
-        return new Response<>("ok", videoService.getVideoPostBrief(nkid));
+        Long uid = GatewayAuthUtils.auth(false);
+        return new Response<>("ok", videoService.getVideoPostBrief(nkid, uid));
     }
 
     @GetMapping("/getVideoPostDetail")
     @Operation(summary = "获取视频详细信息")
     public Response<VideoPostDetailVO> getVideoPostDetail(@RequestParam Long nkid){
-        return new Response<>("ok", videoService.getVideoPostDetail(nkid));
+        Long uid = GatewayAuthUtils.auth(false);
+        return new Response<>("ok", videoService.getVideoPostDetail(nkid, uid));
     }
 
     @GetMapping("/getPartitionList")
@@ -112,8 +114,8 @@ public class VideoController {
     @GetMapping("/getUserPosts")
     @Operation(summary = "获取已上传视频列表")
     public Response<List<VideoPostBriefVO>> getUserPosts(@RequestParam Long uid, @RequestParam(defaultValue = "1") Long page, @RequestParam(defaultValue = "20") Long size){
-        List<VideoPost> userVideoPosts = videoService.getUploadedVideoPosts(uid, page, size);
-        List<VideoPostBriefVO> convertedVos = userVideoPosts.stream().map(post->videoService.getVideoPostBrief(post.getNkid())).toList();
+        List<VideoPost> userVideoPosts = videoService.getUploadedVideoPosts(uid, null, page, size);
+        List<VideoPostBriefVO> convertedVos = userVideoPosts.stream().map(post->videoService.getVideoPostBrief(post.getNkid(), null)).toList();
         return new Response<>("ok", convertedVos);
     }
 

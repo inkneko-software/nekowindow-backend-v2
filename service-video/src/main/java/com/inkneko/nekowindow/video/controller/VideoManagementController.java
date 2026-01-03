@@ -24,7 +24,7 @@ public class VideoManagementController {
     @Operation(summary = "获取已上传视频列表")
     public Response<List<UserUploadedVideoStatisticsVO>> getUploadedVideos(@RequestParam(defaultValue = "1") Long page, @RequestParam(defaultValue = "20") Long size){
         Long uid = GatewayAuthUtils.auth();
-        List<VideoPost> userVideoPosts = videoService.getUploadedVideoPosts(uid, page, size);
+        List<VideoPost> userVideoPosts = videoService.getUploadedVideoPosts(uid, uid, page, size);
         List<UserUploadedVideoStatisticsVO> convertedVos = userVideoPosts.stream()
                 .map(post -> {
                     List<String> tags = videoService.getVideoPostTags(post.getNkid());
@@ -45,7 +45,7 @@ public class VideoManagementController {
         videoService.updatePostBrief(dto, uid);
         List<String> tags = videoService.getVideoPostTags(dto.getNkid());
         UserUploadedVideoStatisticsVO vo = new UserUploadedVideoStatisticsVO(
-                videoService.getVideoPost(dto.getNkid()),
+                videoService.getVideoPost(dto.getNkid(), uid),
                 tags,
                 videoService.getVidePostResourcesByVideoPostId(dto.getNkid())
         );

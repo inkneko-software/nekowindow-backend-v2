@@ -15,6 +15,12 @@ import com.inkneko.nekowindow.video.dto.CreateVideoPostDTO;
 import com.inkneko.nekowindow.video.dto.UpdatePostBriefDTO;
 import com.inkneko.nekowindow.video.entity.*;
 import com.inkneko.nekowindow.video.mapper.*;
+import com.inkneko.nekowindow.video.permission.policy.VideoPostResourceVisibilityPolicy;
+import com.inkneko.nekowindow.video.permission.policy.VideoPostVisibilityPolicy;
+import com.inkneko.nekowindow.video.permission.query.VideoPostQueryHelper;
+import com.inkneko.nekowindow.video.permission.scene.VideoPostAccessScene;
+import com.inkneko.nekowindow.video.permission.scene.VideoPostResourceAccessScene;
+import com.inkneko.nekowindow.video.permission.state.VideoPostState;
 import com.inkneko.nekowindow.video.service.VideoService;
 import com.inkneko.nekowindow.video.vo.*;
 import org.springframework.beans.factory.BeanInitializationException;
@@ -43,6 +49,7 @@ public class VideoServiceImpl implements VideoService {
     OssFeignClient ossFeignClient;
     UserFeignClient userFeignClient;
     URI configURI;
+
     public VideoServiceImpl(
             VideoPostMapper videoPostMapper,
             OssFeignClient ossFeignClient,
@@ -74,8 +81,8 @@ public class VideoServiceImpl implements VideoService {
     /**
      * 检查用户提供的视频URL是否为站内资源，并且是上传者
      *
-     * @param userURI    视频的文件URL
-     * @param userId 用户id
+     * @param userURI 视频的文件URL
+     * @param userId  用户id
      * @return 若文件为站内资源，且userId为该文件的上传者，返回true，否则返回false
      */
     private boolean isVideoUrlValid(URI userURI, Long userId) {
@@ -101,8 +108,8 @@ public class VideoServiceImpl implements VideoService {
     /**
      * 检查用户提供的封面URL是否为站内资源，并且是上传者
      *
-     * @param userURI    封面图片的文件URL
-     * @param userId 用户id
+     * @param userURI 封面图片的文件URL
+     * @param userId  用户id
      * @return 若文件为站内资源，且userId为该文件的上传者，返回true，否则返回false
      */
     private boolean isCoverUrlValid(URI userURI, Long userId) {
@@ -173,7 +180,7 @@ public class VideoServiceImpl implements VideoService {
         videoPost.setCoverUrl(ossEndpointConfig.getEndpoint() + coverURI.getPath());
         videoPost.setPartitionId(dto.getPartitionId());
         videoPost.setPartitionName(partitionInfo.getPartitionName());
-        videoPost.setState(0);
+        videoPost.setState(VideoPostState.REVIEWING.getCode());
         videoPostMapper.insert(videoPost);
         //保存视频标签
         for (String tag : tagSet) {
@@ -208,15 +215,25 @@ public class VideoServiceImpl implements VideoService {
     /**
      * 查询视频投稿
      *
-     * @param nkid
-     * @return
+     * @param nkid 稿件ID
+     * @param viewerUserId  访问者用户ID
+     * @return 稿件简略信息
      */
     @Override
-    public VideoPostBriefVO getVideoPostBrief(Long nkid) {
+    public VideoPostBriefVO getVideoPostBrief(Long nkid, Long viewerUserId) {
         VideoPost post = videoPostMapper.selectById(nkid);
         if (post == null || post.getState() != 0) {
             throw new ServiceException(404, "查询稿件不存在");
         }
+
+        VideoPostAccessScene scene = VideoPostAccessScene.PUBLIC;
+        if (viewerUserId != null && viewerUserId.equals(post.getUid())) {
+            scene = VideoPostAccessScene.OWNER;
+        }
+        if (!VideoPostVisibilityPolicy.visibleStates(scene).contains(post.getState())) {
+            throw new ServiceException(404, "查询稿件不存在");
+        }
+
         List<PostTag> videoTags = postTagMapper.selectList(new LambdaQueryWrapper<PostTag>().eq(PostTag::getNkid, nkid));
         List<String> tags = videoTags.stream().map(PostTag::getTagName).collect(Collectors.toList());
         UserVo userVo = userFeignClient.get(post.getUid());
@@ -229,31 +246,34 @@ public class VideoServiceImpl implements VideoService {
         );
     }
 
-    /**
-     * 获取指定用户的上传视频
-     *
-     * @param uid  用户id
-     * @param page 页数
-     * @param size 页面大小
-     * @return 用户已上传的视频列表，以时间倒序
-     */
+
     @Override
-    public List<VideoPost> getUploadedVideoPosts(Long uid, Long page, Long size) {
-        IPage<VideoPost> selectPage = videoPostMapper.selectPage(new Page<>(page, size), new LambdaQueryWrapper<VideoPost>().eq(VideoPost::getUid, uid).orderByDesc(VideoPost::getCreatedAt));
+    public List<VideoPost> getUploadedVideoPosts(Long uid, Long viewerUserId, Long page, Long size) {
+        VideoPostAccessScene scene = VideoPostAccessScene.PUBLIC;
+        if (viewerUserId != null && viewerUserId.equals(uid)) {
+            scene = VideoPostAccessScene.OWNER;
+        }
+
+        IPage<VideoPost> selectPage = videoPostMapper.selectPage(
+                new Page<>(page, size),
+                VideoPostQueryHelper.visibleWrapper(scene, viewerUserId).eq(VideoPost::getUid, uid).orderByDesc(VideoPost::getCreatedAt)
+        );
         return selectPage.getRecords();
     }
 
-    /**
-     * 查询视频详细信息
-     *
-     * @param nkid 视频ID
-     * @return 视频详细信息
-     */
     @Override
-    public VideoPostDetailVO getVideoPostDetail(Long nkid) {
+    public VideoPostDetailVO getVideoPostDetail(Long nkid, Long viewerUserId) {
         //查询投稿
         VideoPost videoPost = videoPostMapper.selectById(nkid);
         if (videoPost == null) {
+            throw new ServiceException(404, "稿件不存在");
+        }
+
+        VideoPostAccessScene scene = VideoPostAccessScene.PUBLIC;
+        if (viewerUserId != null && viewerUserId.equals(videoPost.getUid())) {
+            scene = VideoPostAccessScene.OWNER;
+        }
+        if (!VideoPostVisibilityPolicy.visibleStates(scene).contains(videoPost.getState())) {
             throw new ServiceException(404, "稿件不存在");
         }
         //查询上传者
@@ -442,9 +462,17 @@ public class VideoServiceImpl implements VideoService {
     }
 
     @Override
-    public VideoPost getVideoPost(Long nkid) {
+    public VideoPost getVideoPost(Long nkid, Long viewerUserId) {
         VideoPost videoPost = videoPostMapper.selectById(nkid);
         if (videoPost == null) {
+            throw new ServiceException(404, "稿件不存在");
+        }
+
+        VideoPostAccessScene scene = VideoPostAccessScene.PUBLIC;
+        if (viewerUserId != null && viewerUserId.equals(videoPost.getUid())) {
+            scene = VideoPostAccessScene.OWNER;
+        }
+        if (!VideoPostVisibilityPolicy.visibleStates(scene).contains(videoPost.getState())) {
             throw new ServiceException(404, "稿件不存在");
         }
         return videoPost;

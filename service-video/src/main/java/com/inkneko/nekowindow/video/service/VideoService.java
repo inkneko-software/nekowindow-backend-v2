@@ -18,7 +18,7 @@ public interface VideoService {
     /**
      * 视频投稿
      *
-     * @param dto 视频信息
+     * @param dto    视频信息
      * @param userId 上传者
      * @return 返回稿件ID
      */
@@ -27,43 +27,52 @@ public interface VideoService {
     /**
      * 查询视频投稿
      *
-     * @param nkid 稿件ID
+     * @param nkid         稿件ID
+     * @param viewerUserId 访问者用户ID
      * @return 指定稿件信息
      */
-    VideoPost getVideoPost(Long nkid);
+    VideoPost getVideoPost(Long nkid, Long viewerUserId);
 
     /**
      * 查询视频投稿简略信息，包括上传者，标签
-     * @param nkid 稿件ID
+     *
+     * @param nkid         稿件ID
+     * @param viewerUserId 访问者用户ID
      * @return 稿件
      */
-    VideoPostBriefVO getVideoPostBrief(Long nkid);
+    VideoPostBriefVO getVideoPostBrief(Long nkid, Long viewerUserId);
 
     /**
      * 获取指定用户的上传视频
-     * @param uid 用户id
-     * @param page 页数
-     * @param size 页面大小
+     *
+     * @param uid          用户id
+     * @param viewerUserId 访问者用户ID
+     * @param page         页数
+     * @param size         页面大小
      * @return 用户已上传的视频列表，以时间倒序
      */
-    List<VideoPost> getUploadedVideoPosts(Long uid, Long page, Long size);
+    List<VideoPost> getUploadedVideoPosts(Long uid, Long viewerUserId, Long page, Long size);
 
     /**
      * 查询视频详细信息
-     * @param nkid 视频ID
+     *
+     * @param nkid         视频ID
+     * @param viewerUserId 访问者用户ID
      * @return 视频详细信息
      */
-    VideoPostDetailVO getVideoPostDetail(Long nkid);
+    VideoPostDetailVO getVideoPostDetail(Long nkid, Long viewerUserId);
 
     /**
      * 获取指定视频资源信息
-     * @param videoId 视频资源ID
+     *
+     * @param videoId      视频资源ID
      * @return 对应的视频资源
      */
     VideoPostResource getVideoPostResource(Long videoId);
 
     /**
      * 获取指定稿件的视频资源列表
+     *
      * @param nkid 稿件ID
      * @return 指定稿件的视频资源列表
      */
@@ -71,12 +80,14 @@ public interface VideoService {
 
     /**
      * 查询所有的分区
+     *
      * @return 分区列表
      */
     List<PartitionInfo> getPartitions();
 
     /**
      * 查询分区推荐标签
+     *
      * @param partitionId 分区ID
      * @return 推荐标签列表
      */
@@ -84,23 +95,26 @@ public interface VideoService {
 
     /**
      * 查询分区的推荐视频
+     *
      * @param partitionId 分区ID
-     * @param uid 用户ID
+     * @param uid         用户ID
      * @return 推荐视频列表
      */
     List<VideoPostBriefVO> getPartitionRecommendVideos(Integer partitionId, Long uid);
 
     /**
      * 查询分区视频
+     *
      * @param partitionId 分区ID
-     * @param page 页数
-     * @param size 页面大小
+     * @param page        页数
+     * @param size        页面大小
      * @return 视频列表
      */
     List<VideoPostBriefVO> getPartitionVideos(Integer partitionId, Long page, Long size);
 
     /**
      * 更新视频信息
+     *
      * @param dto 更新数据，见{@link UpdatePostBriefDTO}
      * @param uid 发起者用户uid
      */
@@ -115,6 +129,7 @@ public interface VideoService {
 
     /**
      * 获取稿件的标签
+     *
      * @param nkid 视频ID
      * @return 标签列表
      */
