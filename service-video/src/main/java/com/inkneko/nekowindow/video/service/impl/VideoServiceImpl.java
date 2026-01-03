@@ -20,6 +20,7 @@ import com.inkneko.nekowindow.video.permission.policy.VideoPostVisibilityPolicy;
 import com.inkneko.nekowindow.video.permission.query.VideoPostQueryHelper;
 import com.inkneko.nekowindow.video.permission.scene.VideoPostAccessScene;
 import com.inkneko.nekowindow.video.permission.scene.VideoPostResourceAccessScene;
+import com.inkneko.nekowindow.video.permission.state.VideoPostResourceState;
 import com.inkneko.nekowindow.video.permission.state.VideoPostState;
 import com.inkneko.nekowindow.video.service.VideoService;
 import com.inkneko.nekowindow.video.vo.*;
@@ -459,6 +460,25 @@ public class VideoServiceImpl implements VideoService {
             }
         }
 
+    }
+
+    @Override
+    public void deleteVideoPost(Long nkid, Long userId) {
+        VideoPost videoPost = videoPostMapper.selectById(nkid);
+        if (videoPost == null) {
+            throw new ServiceException(404, "稿件不存在");
+        }
+
+        if (!videoPost.getUid().equals(userId)) {
+            throw new ServiceException(403, "当前登录用户没有权限删除指定稿件");
+        }
+        videoPost.setState(VideoPostState.SELF_DELETE.getCode());
+        videoPostMapper.updateById(videoPost);
+        List<VideoPostResource> resources = videoPostResourceMapper.selectList(new LambdaQueryWrapper<VideoPostResource>().eq(VideoPostResource::getNkid, nkid));
+        for (VideoPostResource resource : resources) {
+            resource.setState(VideoPostResourceState.SELF_DELETE.getCode());
+            videoPostResourceMapper.updateById(resource);
+        }
     }
 
     @Override

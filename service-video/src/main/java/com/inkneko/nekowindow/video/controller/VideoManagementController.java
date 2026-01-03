@@ -51,4 +51,12 @@ public class VideoManagementController {
         );
         return new Response<>("ok", vo);
     }
+
+    @PostMapping("/deleteVideoPost")
+    @Operation(summary = "删除已上传的视频")
+    public Response<?> deleteVideoPost(@RequestParam Long nkid) {
+        Long uid = GatewayAuthUtils.auth();
+        videoService.deleteVideoPost(nkid, uid);
+        return new Response<>("删除成功", null);
+    }
 }

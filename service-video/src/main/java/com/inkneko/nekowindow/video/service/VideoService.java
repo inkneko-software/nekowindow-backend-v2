@@ -25,6 +25,14 @@ public interface VideoService {
     CreateVideoPostVO createVideoPost(CreateVideoPostDTO dto, Long userId);
 
     /**
+     * 删除视频投稿
+     *
+     * @param nkid   稿件ID
+     * @param userId 操作者用户ID
+     */
+    void deleteVideoPost(Long nkid, Long userId);
+
+    /**
      * 查询视频投稿
      *
      * @param nkid         稿件ID
