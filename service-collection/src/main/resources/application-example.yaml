@@ -1,0 +1,39 @@
+server:
+  port: 8430
+  forward-headers-strategy: framework
+spring:
+  application:
+    name: nekowindow-service-collection
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/nekowindow_collection
+    username: root
+    password: test
+  data:
+    redis:
+      host: 10.200.0.20
+      port: 6379
+  rabbitmq:
+    host: 10.200.0.20
+    username: guest
+    password: guest
+    listener:
+      simple:
+        prefetch: 2
+
+
+s3:
+  access-key: user
+  secret-key: password
+  endpoint: http://localhost:9000
+  bucket: nekowindow
+
+springdoc:
+  swagger-ui:
+    path: "/swagger/collection/swagger-ui.html"
+  api-docs:
+    path: "/swagger/collection/api-docs"

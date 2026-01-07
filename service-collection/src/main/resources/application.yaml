@@ -1,0 +1,12 @@
+server:
+  port: 8430
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: nekowindow-service-collection
+  cloud:
+    nacos:
+      server-addr: 10.200.0.10:8848
+  config:
+    import: nacos:nekowindow-service-collection.yaml?refresh=true
