@@ -201,7 +201,7 @@ public class VideoServiceImpl implements VideoService {
                 null,
                 videoPost.getNkid(),
                 dto.getTitle(),
-                0,
+                0L,
                 3,
                 "",
                 null,
@@ -544,12 +544,22 @@ public class VideoServiceImpl implements VideoService {
                         .getAndSet(0);
 
                 if (count > 0) {
-                    videoPostResourceMapper.update(
-                            null,
-                            Wrappers.<VideoPostResource>lambdaUpdate()
-                                    .eq(VideoPostResource::getVideoId, videoId)
-                                    .setSql("visit = visit + " + count)
-                    );
+                    VideoPostResource videoPostResource = videoPostResourceMapper.selectById(videoId);
+                    if (videoPostResource != null){
+                        videoPostResourceMapper.update(
+                                null,
+                                Wrappers.<VideoPostResource>lambdaUpdate()
+                                        .eq(VideoPostResource::getVideoId, videoId)
+                                        .setSql("visit = visit + " + count)
+                        );
+                        videoPostMapper.update(
+                                null,
+                                Wrappers.<VideoPost>lambdaUpdate()
+                                        .eq(VideoPost::getNkid, videoPostResource.getNkid())
+                                        .setSql("visit = visit + " + count)
+                        );
+                    }
+
                 }
 
                 dirtyVideos.remove(videoId);

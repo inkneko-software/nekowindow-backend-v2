@@ -18,6 +18,7 @@ public class VideoPost {
     String title;
     String coverUrl;
     Integer duration;
+    Long visit;
     Integer shared;
     String description;
     Integer state;

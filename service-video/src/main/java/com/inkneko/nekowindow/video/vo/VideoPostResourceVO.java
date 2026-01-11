@@ -18,7 +18,7 @@ public class VideoPostResourceVO {
     private String title;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
-    private Integer visit;
+    private Long visit;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String dashMpdUrl;

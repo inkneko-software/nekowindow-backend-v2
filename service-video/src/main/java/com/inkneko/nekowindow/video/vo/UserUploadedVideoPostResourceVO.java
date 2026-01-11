@@ -14,6 +14,7 @@ public class UserUploadedVideoPostResourceVO {
     Long videoId;
     Integer duration;
     Integer state;
+    Long visit;
     String reviewFailedReason;
     Integer conversionState;
     String conversionFailedReason;
@@ -24,6 +25,7 @@ public class UserUploadedVideoPostResourceVO {
         this.videoId = videoPostResource.getVideoId();
         this.duration = videoPostResource.getDuration();
         this.state = videoPostResource.getState();
+        this.visit = videoPostResource.getVisit();
         this.reviewFailedReason = videoPostResource.getReviewFailedReason();
         this.conversionState = videoPostResource.getConvertState();
         this.conversionFailedReason = videoPostResource.getConvertErrMsg();

@@ -26,6 +26,9 @@ public class VideoPostBriefVO {
     private String coverUrl;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    private Long visit;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private UploadUserVO uploader;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
@@ -33,6 +36,12 @@ public class VideoPostBriefVO {
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer duration;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    private String partitionName;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    private Integer partitionId;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private Date createdAt;
@@ -43,6 +52,9 @@ public class VideoPostBriefVO {
         this.description = videoPost.getDescription();
         this.coverUrl = videoPost.getCoverUrl();
         this.duration = videoPost.getDuration();
+        this.visit = videoPost.getVisit();
+        this.partitionId = videoPost.getPartitionId();
+        this.partitionName = videoPost.getPartitionName();
         this.createdAt = videoPost.getCreatedAt();
         this.uploader = uploader;
         this.tags = tags;

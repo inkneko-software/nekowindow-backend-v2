@@ -27,6 +27,9 @@ public class UserUploadedVideoStatisticsVO {
     Integer duration;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    Long visit;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     Integer shared;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
@@ -58,6 +61,7 @@ public class UserUploadedVideoStatisticsVO {
         this.title = videoPost.getTitle();
         this.coverUrl = videoPost.getCoverUrl();
         this.duration = videoPost.getDuration();
+        this.visit = videoPost.getVisit();
         this.shared = videoPost.getShared();
         this.description = videoPost.getDescription();
         this.state = videoPost.getState();

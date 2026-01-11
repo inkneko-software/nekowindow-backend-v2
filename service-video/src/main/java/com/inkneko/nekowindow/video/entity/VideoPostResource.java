@@ -17,7 +17,7 @@ public class VideoPostResource {
     Long videoId;
     Long nkid;
     String title;
-    Integer visit;
+    Long visit;
     Integer state;
     String reviewFailedReason;
     LocalDateTime createdAt;
