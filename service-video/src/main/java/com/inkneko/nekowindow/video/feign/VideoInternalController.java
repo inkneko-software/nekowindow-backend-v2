@@ -48,6 +48,7 @@ public class VideoInternalController implements VideoFeignClient {
     }
 
     @Override
+    @GetMapping("/getVideoPost")
     public VideoPostDTO getVideoPost(Long nkid, Long viewerUserId) {
         return videoInternalService.getVideoPost(nkid, viewerUserId);
     }
