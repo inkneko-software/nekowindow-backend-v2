@@ -9,9 +9,9 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
+    <groupId>com.inkneko.nekowindow.api.user</groupId>
     <artifactId>api-user</artifactId>
     <description>用户服务内部API</description>
-    <packaging>jar</packaging>
 
     <properties>
         <maven.compiler.source>18</maven.compiler.source>
