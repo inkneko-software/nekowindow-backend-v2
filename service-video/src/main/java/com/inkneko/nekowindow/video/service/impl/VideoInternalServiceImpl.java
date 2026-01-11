@@ -1,8 +1,11 @@
 package com.inkneko.nekowindow.video.service.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.inkneko.nekowindow.api.video.dto.VideoPostDTO;
 import com.inkneko.nekowindow.video.entity.VideoPost;
+import com.inkneko.nekowindow.video.entity.VideoPostResource;
 import com.inkneko.nekowindow.video.mapper.VideoPostMapper;
+import com.inkneko.nekowindow.video.mapper.VideoPostResourceMapper;
 import com.inkneko.nekowindow.video.permission.policy.VideoPostVisibilityPolicy;
 import com.inkneko.nekowindow.video.permission.scene.VideoPostAccessScene;
 import com.inkneko.nekowindow.video.service.VideoInternalService;
@@ -16,15 +19,22 @@ import java.util.Map;
 public class VideoInternalServiceImpl implements VideoInternalService {
 
     VideoPostMapper videoPostMapper;
+    VideoPostResourceMapper videoPostResourceMapper;
 
-    public VideoInternalServiceImpl(VideoPostMapper videoPostMapper) {
+    public VideoInternalServiceImpl(
+            VideoPostMapper videoPostMapper,
+            VideoPostResourceMapper videoPostResourceMapper) {
         this.videoPostMapper = videoPostMapper;
+        this.videoPostResourceMapper = videoPostResourceMapper;
     }
 
     @Override
     public Map<Long, VideoPostDTO> getVideoPostBatch(List<Long> nkidList, Long viewerUserId) {
-        List<VideoPost> videoPosts = videoPostMapper.selectBatchIds(nkidList);
         Map<Long, VideoPostDTO> result = new HashMap<>();
+        if (nkidList == null || nkidList.isEmpty()) {
+            return result;
+        }
+        List<VideoPost> videoPosts = videoPostMapper.selectBatchIds(nkidList);
         for (VideoPost videoPost : videoPosts) {
             VideoPostAccessScene scene = VideoPostAccessScene.PUBLIC;
             if (viewerUserId != null && viewerUserId.equals(videoPost.getUid())) {
@@ -66,10 +76,21 @@ public class VideoInternalServiceImpl implements VideoInternalService {
             return null;
         }
 
+        List<VideoPostResource> resources = videoPostResourceMapper.selectList(
+                Wrappers.<VideoPostResource>lambdaQuery()
+                        .eq(VideoPostResource::getNkid, nkid)
+        );
+
+        Long visit = 0L;
+        for (VideoPostResource resource : resources) {
+            visit += resource.getVisit();
+        }
+
         VideoPostDTO dto = new VideoPostDTO();
         dto.setNkid(videoPost.getNkid());
         dto.setUid(videoPost.getUid());
         dto.setTitle(videoPost.getTitle());
+        dto.setVisit(visit);
         dto.setCoverUrl(videoPost.getCoverUrl());
         dto.setDuration(videoPost.getDuration());
         dto.setShared(videoPost.getShared());

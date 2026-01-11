@@ -13,6 +13,7 @@ public class VideoPostDTO {
     Long nkid;
     Long uid;
     String title;
+    Long visit;
     String coverUrl;
     Integer duration;
     Integer shared;
