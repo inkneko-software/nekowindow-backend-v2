@@ -2,6 +2,7 @@ package com.inkneko.nekowindow.video.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.inkneko.nekowindow.api.encode.client.EncodeFeignClient;
 import com.inkneko.nekowindow.api.oss.client.OssFeignClient;
@@ -24,7 +25,10 @@ import com.inkneko.nekowindow.video.permission.state.VideoPostResourceState;
 import com.inkneko.nekowindow.video.permission.state.VideoPostState;
 import com.inkneko.nekowindow.video.service.VideoService;
 import com.inkneko.nekowindow.video.vo.*;
+import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.*;
 import org.springframework.beans.factory.BeanInitializationException;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,11 +37,13 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class VideoServiceImpl implements VideoService {
 
     VideoPostMapper videoPostMapper;
@@ -50,6 +56,7 @@ public class VideoServiceImpl implements VideoService {
     OssFeignClient ossFeignClient;
     UserFeignClient userFeignClient;
     URI configURI;
+    RedissonClient redissonClient;
 
     public VideoServiceImpl(
             VideoPostMapper videoPostMapper,
@@ -60,7 +67,8 @@ public class VideoServiceImpl implements VideoService {
             PostTagMapper postTagMapper,
             VideoPostResourceMapper videoPostResourceMapper,
             OssEndpointConfig ossEndpointConfig,
-            EncodeFeignClient encodeFeignClient
+            EncodeFeignClient encodeFeignClient,
+            RedissonClient redissonClient
     ) {
         this.videoPostMapper = videoPostMapper;
         this.ossFeignClient = ossFeignClient;
@@ -71,6 +79,7 @@ public class VideoServiceImpl implements VideoService {
         this.videoPostResourceMapper = videoPostResourceMapper;
         this.ossEndpointConfig = ossEndpointConfig;
         this.encodeFeignClient = encodeFeignClient;
+        this.redissonClient = redissonClient;
 
         try {
             configURI = new URI(ossEndpointConfig.endpoint);
@@ -216,8 +225,8 @@ public class VideoServiceImpl implements VideoService {
     /**
      * 查询视频投稿
      *
-     * @param nkid 稿件ID
-     * @param viewerUserId  访问者用户ID
+     * @param nkid         稿件ID
+     * @param viewerUserId 访问者用户ID
      * @return 稿件简略信息
      */
     @Override
@@ -505,5 +514,53 @@ public class VideoServiceImpl implements VideoService {
             throw new ServiceException(404, "稿件不存在");
         }
         return postTagMapper.selectList(new LambdaQueryWrapper<PostTag>().eq(PostTag::getNkid, nkid)).stream().map(PostTag::getTagName).toList();
+    }
+
+    @Override
+    public void addVideoViewCount(Long videoResourceId, Long userId) {
+        RSetCache<Long> viewSet = redissonClient.getSetCache("video:viewer:" + videoResourceId);
+        if (viewSet.add(userId)) {
+            RAtomicLong viewCount = redissonClient.getAtomicLong("video:view_count:" + videoResourceId);
+            viewCount.incrementAndGet();
+            redissonClient.getSet("video:view:dirty").add(videoResourceId);
+        }
+    }
+
+    @Scheduled(fixedDelay = 5000)
+    public void flushViewCount(){
+        RLock lock = redissonClient.getLock("job:video:view:flush");
+        boolean locked = false;
+        try {
+            locked = lock.tryLock(0, 30, TimeUnit.SECONDS);
+            if (!locked) {
+                return;
+            }
+
+            RSet<Long> dirtyVideos = redissonClient.getSet("video:view:dirty");
+
+            for (Long videoId : dirtyVideos.readAll()) {
+                long count = redissonClient
+                        .getAtomicLong("video:view_count:" + videoId)
+                        .getAndSet(0);
+
+                if (count > 0) {
+                    videoPostResourceMapper.update(
+                            null,
+                            Wrappers.<VideoPostResource>lambdaUpdate()
+                                    .eq(VideoPostResource::getVideoId, videoId)
+                                    .setSql("visit = visit + " + count)
+                    );
+                }
+
+                dirtyVideos.remove(videoId);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("tryLock interrupted, exit task", e);
+        }finally {
+            if (locked){
+                lock.unlock();
+            }
+        }
     }
 }

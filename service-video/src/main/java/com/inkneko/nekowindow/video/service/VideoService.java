@@ -142,4 +142,12 @@ public interface VideoService {
      * @return 标签列表
      */
     List<String> getVideoPostTags(Long nkid);
+
+    /**
+     * 增加视频观看次数
+     *
+     * @param videoResourceId 视频资源ID
+     * @param userId          观看用户ID
+     */
+    void addVideoViewCount(Long videoResourceId, Long userId);
 }

@@ -119,5 +119,14 @@ public class VideoController {
         return new Response<>("ok", convertedVos);
     }
 
+    @PostMapping("/logMetrics")
+    @Operation(summary = "视频播放记录")
+    public Response<?> logMetrics(@RequestParam Long videoId) {
+        Long userId = GatewayAuthUtils.auth(false);
+        if (userId != null) {
+            videoService.addVideoViewCount(videoId, userId);
+        }
+        return new Response<>("ok", null);
+    }
 
 }
