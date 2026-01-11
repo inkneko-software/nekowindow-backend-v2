@@ -27,6 +27,7 @@
         <module>common</module>
         <module>api</module>
         <module>service-operation</module>
+        <module>service-collection</module>
     </modules>
     <properties>
         <java.version>18</java.version>
