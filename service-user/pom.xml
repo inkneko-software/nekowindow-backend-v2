@@ -29,7 +29,7 @@
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>com.inkneko.nekowindow</groupId>
+            <groupId>com.inkneko.nekowindow.api.user</groupId>
             <artifactId>api-user</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
