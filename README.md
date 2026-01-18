@@ -47,7 +47,7 @@ mvn -s mvn_tencent_mirror_settings.xml -f pom.xml clean package -Dmaven.test.ski
 ```python
 #打包
 import os
-targets=['gateway', 'service-auth', 'service-user', 'service-oss', 'service-video', 'service-danmaku']
+targets=['gateway', 'service-auth', 'service-user', 'service-oss', 'service-video', 'service-danmaku', 'service-collection', 'service-comment']
 
 for target in targets:
     os.system("docker build --build-arg SERVICE_NAME=%s -t nekowindow-%s ." % (target,target))
@@ -107,4 +107,16 @@ services:
         - SPRING_CLOUD_NACOS_SERVERADDR=10.200.0.1
         - SPRING_CLOUD_NACOS_DISCOVERY_GROUP=prod
         - SPRING_CLOUD_NACOS_CONFIG_GROUP=prod
+  service-collection:
+    image: nekowindow-service-collection
+    environment:
+      - SPRING_CLOUD_NACOS_SERVERADDR=10.200.0.1
+      - SPRING_CLOUD_NACOS_DISCOVERY_GROUP=prod
+      - SPRING_CLOUD_NACOS_CONFIG_GROUP=prod
+  service-comment:
+    image: nekowindow-service-comment
+    environment:
+      - SPRING_CLOUD_NACOS_SERVERADDR=10.200.0.1
+      - SPRING_CLOUD_NACOS_DISCOVERY_GROUP=prod
+      - SPRING_CLOUD_NACOS_CONFIG_GROUP=prod
 ```
