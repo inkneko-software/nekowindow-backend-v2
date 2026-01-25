@@ -17,7 +17,7 @@ public class AuthController implements AuthClient {
 
     @Override
     public AuthVo getSession(Long userId, String sessionToken) {
-        Auth auth = authService.getSession(sessionToken);
+        Auth auth = authService.getSession(userId, sessionToken);
         if (auth != null && auth.getUserId().equals(userId)) {
             return new AuthVo(auth.getUserId(), auth.getSessionToken(), auth.getCreateDate(), auth.getExpireDate());
         }
@@ -27,11 +27,20 @@ public class AuthController implements AuthClient {
     @Override
     public AuthVo newSession(Long userId) {
         Auth auth = authService.newSession(userId);
-        authService.saveSession(auth);
         return new AuthVo(auth.getUserId(), auth.getSessionToken(), auth.getCreateDate(), auth.getExpireDate());
     }
 
-//    @PostMapping("/auth/login")
+    @Override
+    public void removeUserSession(Long userId, String sessionToken) {
+        authService.removeSession(userId, sessionToken);
+    }
+
+    @Override
+    public void removeAllUserSession(Long userId) {
+        authService.removeAllUserSession(userId);
+    }
+
+    //    @PostMapping("/auth/login")
 //    public Response<?> login(@RequestBody EmailLoginDto dto, HttpServletResponse response) {
 //        Auth auth = authService.login(dto);
 //        if (auth != null) {
