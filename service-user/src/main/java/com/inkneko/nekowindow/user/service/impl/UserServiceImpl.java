@@ -1,11 +1,13 @@
 package com.inkneko.nekowindow.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.inkneko.nekowindow.api.auth.client.AuthClient;
 import com.inkneko.nekowindow.api.auth.vo.AuthVo;
 import com.inkneko.nekowindow.common.ServiceException;
 import com.inkneko.nekowindow.user.config.UserServiceConfig;
 import com.inkneko.nekowindow.user.dto.EmailLoginDTO;
+import com.inkneko.nekowindow.user.dto.EmailPasswordLoginDTO;
 import com.inkneko.nekowindow.user.dto.SendLoginEmailCodeDTO;
 import com.inkneko.nekowindow.user.entity.Relation;
 import com.inkneko.nekowindow.user.entity.UserCredential;
@@ -17,6 +19,7 @@ import com.inkneko.nekowindow.user.vo.DailyBonusVO;
 import com.inkneko.nekowindow.user.vo.LoginVO;
 import com.inkneko.nekowindow.user.vo.MyUserDetailVO;
 import com.inkneko.nekowindow.user.vo.UserDetailVO;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.redisson.api.RMapCache;
 import org.redisson.api.RedissonClient;
@@ -32,6 +35,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -49,6 +53,7 @@ public class UserServiceImpl implements UserService {
     private final RedissonClient redissonClient;
     private final RMapCache<String, String> loginEmailCodeMap;
     private final RMapCache<String, String> registerEmailCodeMap;
+    private final RMapCache<String, String> passwordResetEmailCodeMap;
 
     private final AuthClient authClient;
 
@@ -69,6 +74,7 @@ public class UserServiceImpl implements UserService {
         this.redissonClient = redissonClient;
         this.loginEmailCodeMap = redissonClient.getMapCache("user-login-email-code");
         this.registerEmailCodeMap = redissonClient.getMapCache("user-register-email-code");
+        this.passwordResetEmailCodeMap = redissonClient.getMapCache("user-password-reset-email-code");
         this.authClient = authClient;
         this.userServiceConfig = userServiceConfig;
         this.relationMapper = relationMapper;
@@ -77,6 +83,16 @@ public class UserServiceImpl implements UserService {
 
     private String genEmailCode() {
         return String.format("%06d", secureRandom.nextInt(1000000));
+    }
+
+    /**
+     * 计算密码哈希
+     * @param salt 盐
+     * @param password 密码
+     * @return 密码哈希
+     */
+    private String computeAuthHash(String salt, String password){
+        return DigestUtils.sha1Hex(salt + password);
     }
 
     @Override
@@ -144,6 +160,94 @@ public class UserServiceImpl implements UserService {
         return new LoginVO(authVo.getSessionToken(), authVo.getUserId());
     }
 
+
+    @Override
+    public LoginVO login(EmailPasswordLoginDTO dto) {
+        UserCredential userCredential = userCredentialMapper.selectOne(new LambdaQueryWrapper<UserCredential>().eq(UserCredential::getEmail, dto.getEmail()));
+        if (userCredential == null) {
+            throw new ServiceException(403, "用户不存在");
+        }
+        if (userCredential.getAuthSalt().equals("-")) {
+            throw new ServiceException(403, "密码错误");
+        }
+        String authHash = computeAuthHash(userCredential.getAuthSalt(), dto.getPassword());
+        if (!authHash.equals(userCredential.getAuthHash())) {
+            throw new ServiceException(403, "密码错误");
+        }
+        AuthVo authVo = authClient.newSession(userCredential.getUid());
+        return new LoginVO(authVo.getSessionToken(), authVo.getUserId());
+    }
+
+    @Override
+    public LoginVO updatePasswordByOldPassword(Long userId, String oldPassword, String newPassword) {
+        UserCredential userCredential = userCredentialMapper.selectById(userId);
+        if (userCredential == null) {
+            throw new ServiceException(404, "用户不存在");
+        }
+        if (userCredential.getAuthHash().equals("-") || !computeAuthHash(userCredential.getAuthSalt(), oldPassword).equals(userCredential.getAuthHash())) {
+            throw new ServiceException(403, "旧密码错误");
+        }
+
+        String authSalt = UUID.randomUUID().toString();
+        String authHash = computeAuthHash(authSalt, newPassword);
+        userCredentialMapper.update(
+                null,
+                Wrappers.<UserCredential>lambdaUpdate()
+                        .set(UserCredential::getAuthSalt, authSalt)
+                        .set(UserCredential::getAuthHash, authHash)
+                        .eq(UserCredential::getUid, userId)
+        );
+        authClient.removeAllUserSession(userId);
+        AuthVo authVo = authClient.newSession(userId);
+        return new LoginVO(authVo.getSessionToken(), authVo.getUserId());
+    }
+
+    @Override
+    public void sendPasswordResetEmailCode(String email) {
+        UserCredential userCredential = userCredentialMapper.selectOne(new LambdaQueryWrapper<UserCredential>().eq(UserCredential::getEmail, email));
+        String code = genEmailCode();
+
+        if (userCredential != null) {
+            if (passwordResetEmailCodeMap.remainTimeToLive(userCredential.getEmail()) > 240 * 1000) {
+                throw new ServiceException(400, "验证码请求过于频繁");
+            }
+            passwordResetEmailCodeMap.put(userCredential.getEmail(), code, 5, TimeUnit.MINUTES);
+            asyncMailSender.send(
+                    String.format("NekoWindow <%s>", userServiceConfig.getEmailFrom()),
+                    userCredential.getEmail(),
+                    "【墨云视窗】重置密码验证",
+                    String.format("您的重置密码验证码为<span style='color: #3a62bf;'>%s</span>, 5分钟内有效<br/>若非本人请求请忽略", code),
+                    true
+            );
+        } else {
+            throw new ServiceException(400, "用户不存在");
+        }
+    }
+
+    @Override
+    public LoginVO updatePasswordByEmailCode(String email, String emailCode, String newPassword) {
+        UserCredential userCredential = userCredentialMapper.selectOne(new LambdaQueryWrapper<UserCredential>().eq(UserCredential::getEmail, email));
+        if (userCredential == null) {
+            throw new ServiceException(404, "用户不存在");
+        }
+        String code = passwordResetEmailCodeMap.get(userCredential.getEmail());
+        if (code == null || !code.equals(emailCode)) {
+            throw new ServiceException(403, "验证码错误或已失效");
+        }
+        passwordResetEmailCodeMap.remove(userCredential.getEmail());
+        String authSalt = UUID.randomUUID().toString();
+        String authHash = computeAuthHash(authSalt, newPassword);
+        userCredentialMapper.update(
+                null,
+                Wrappers.<UserCredential>lambdaUpdate()
+                        .set(UserCredential::getAuthSalt, authSalt)
+                        .set(UserCredential::getAuthHash, authHash)
+                        .eq(UserCredential::getEmail, email)
+        );
+        authClient.removeAllUserSession(userCredential.getUid());
+        AuthVo authVo = authClient.newSession(userCredential.getUid());
+        return new LoginVO(authVo.getSessionToken(), authVo.getUserId());
+    }
 
     @Override
     public UserDetail getUserDetail(Long userId) {

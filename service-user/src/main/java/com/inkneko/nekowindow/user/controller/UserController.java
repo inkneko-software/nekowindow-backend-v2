@@ -5,9 +5,7 @@ import com.inkneko.nekowindow.api.oss.client.OssFeignClient;
 import com.inkneko.nekowindow.api.oss.dto.GenUploadUrlDTO;
 import com.inkneko.nekowindow.api.oss.vo.UploadRecordVO;
 import com.inkneko.nekowindow.common.ServiceException;
-import com.inkneko.nekowindow.user.dto.EmailLoginDTO;
-import com.inkneko.nekowindow.user.dto.SendLoginEmailCodeDTO;
-import com.inkneko.nekowindow.user.dto.UpdateUserDetailDTO;
+import com.inkneko.nekowindow.user.dto.*;
 import com.inkneko.nekowindow.user.vo.LoginVO;
 import com.inkneko.nekowindow.user.vo.MyUserDetailVO;
 import com.inkneko.nekowindow.user.vo.UserDetailVO;
@@ -57,6 +55,62 @@ public class UserController {
         response.addCookie(userIdCookie);
         response.addCookie(sessionTokenCookie);
         return new Response<>("登录成功");
+    }
+
+    @PostMapping("/loginByEmailPassword")
+    @Operation(summary = "登录", description = "通过邮箱与密码进行登录")
+    public Response<?> loginByEmailPassword(@RequestBody EmailPasswordLoginDTO dto, HttpServletResponse response) {
+        LoginVO loginVo = userService.login(dto);
+        Cookie userIdCookie = new Cookie("userId", loginVo.getUserId().toString());
+        Cookie sessionTokenCookie = new Cookie("sessionToken", loginVo.getSessionToken());
+        userIdCookie.setPath("/");
+        //90天
+        userIdCookie.setMaxAge(60 * 60 * 24 * 90);
+        sessionTokenCookie.setPath("/");
+        sessionTokenCookie.setMaxAge(60 * 60 * 24 * 90);
+        response.addCookie(userIdCookie);
+        response.addCookie(sessionTokenCookie);
+        return new Response<>("登录成功");
+    }
+
+    @PostMapping("/updatePasswordByOldPassword")
+    @Operation(summary = "更新密码", description = "通过旧密码进行密码更新")
+    public Response<?> updatePasswordByOldPassword(@Validated @RequestBody UpdatePasswordByOldPasswordDTO dto, HttpServletResponse response) {
+        Long uid = GatewayAuthUtils.auth();
+        LoginVO loginVo = userService.updatePasswordByOldPassword(uid, dto.getOldPassword(), dto.getNewPassword());
+        Cookie userIdCookie = new Cookie("userId", loginVo.getUserId().toString());
+        Cookie sessionTokenCookie = new Cookie("sessionToken", loginVo.getSessionToken());
+        userIdCookie.setPath("/");
+        //90天
+        userIdCookie.setMaxAge(60 * 60 * 24 * 90);
+        sessionTokenCookie.setPath("/");
+        sessionTokenCookie.setMaxAge(60 * 60 * 24 * 90);
+        response.addCookie(userIdCookie);
+        response.addCookie(sessionTokenCookie);
+        return new Response<>("重置成功");
+    }
+
+    @PostMapping("/sendPasswordResetEmailCode")
+    @Operation(summary = "发送密码重置邮件")
+    public Response<?> sendPasswordResetEmailCode(@RequestBody SendResetPasswordEmailCodeDTO dto) {
+        userService.sendPasswordResetEmailCode(dto.getEmail());
+        return new Response<>("发送成功");
+    }
+
+    @PostMapping("/updatePasswordByEmailCode")
+    @Operation(summary = "更新密码", description = "通过邮箱与邮箱验证码进行密码更新")
+    public Response<?> updatePasswordByEmailCode(@Validated @RequestBody UpdatePasswordByEmailCodeDTO dto, HttpServletResponse response) {
+        LoginVO loginVo = userService.updatePasswordByEmailCode(dto.getEmail(), dto.getCode(), dto.getNewPassword());
+        Cookie userIdCookie = new Cookie("userId", loginVo.getUserId().toString());
+        Cookie sessionTokenCookie = new Cookie("sessionToken", loginVo.getSessionToken());
+        userIdCookie.setPath("/");
+        //90天
+        userIdCookie.setMaxAge(60 * 60 * 24 * 90);
+        sessionTokenCookie.setPath("/");
+        sessionTokenCookie.setMaxAge(60 * 60 * 24 * 90);
+        response.addCookie(userIdCookie);
+        response.addCookie(sessionTokenCookie);
+        return new Response<>("更新成功");
     }
 
     @PostMapping("/updateUserDetail")

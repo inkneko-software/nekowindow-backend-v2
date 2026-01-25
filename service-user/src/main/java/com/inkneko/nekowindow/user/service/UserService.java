@@ -1,6 +1,7 @@
 package com.inkneko.nekowindow.user.service;
 
 import com.inkneko.nekowindow.user.dto.EmailLoginDTO;
+import com.inkneko.nekowindow.user.dto.EmailPasswordLoginDTO;
 import com.inkneko.nekowindow.user.dto.SendLoginEmailCodeDTO;
 import com.inkneko.nekowindow.user.entity.UserDetail;
 import com.inkneko.nekowindow.user.vo.DailyBonusVO;
@@ -25,6 +26,41 @@ public interface UserService {
      * @return 若邮箱与验证码匹配，返回session信息
      */
     LoginVO login(EmailLoginDTO dto);
+
+    /**
+     * 通过邮箱与密码进行登录，若未注册则返回错误
+     *
+     * @param dto 登录参数
+     * @return 若邮箱与密码匹配，返回session信息
+     */
+    LoginVO login(EmailPasswordLoginDTO dto);
+
+    /**
+     * 修改用户密码
+     *
+     * @param userId 用户ID
+     * @param oldPassword 旧密码
+     * @param newPassword 新密码
+     * @return 修改成功的session信息
+     */
+    LoginVO updatePasswordByOldPassword(Long userId, String oldPassword, String newPassword);
+
+    /**
+     * 发送密码重置验证码
+     *
+     * @param email 邮箱
+     */
+    void sendPasswordResetEmailCode(String email);
+
+    /**
+     * 通过邮箱与验证码进行密码重置
+     *
+     * @param email 邮箱
+     * @param emailCode 邮箱验证码
+     * @param newPassword 新密码
+     * @return 修改成功的session信息
+     */
+    LoginVO updatePasswordByEmailCode(String email, String emailCode, String newPassword);
 
     /**
      * 查询用户信息
