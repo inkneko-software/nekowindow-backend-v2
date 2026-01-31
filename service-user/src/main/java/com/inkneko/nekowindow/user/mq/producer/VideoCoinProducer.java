@@ -13,7 +13,12 @@ public class VideoCoinProducer {
     @Resource(name = "videoCoinExtRocketMQTemplate")
     RocketMQTemplate videoCoinExtRocketMQTemplate;
     public boolean sendCoin(Long orderId, Long userId, Long nkid, Integer coinNum) {
-        PostVideoCoinDTO dto = new PostVideoCoinDTO(orderId, userId, nkid, coinNum);
+        PostVideoCoinDTO dto = new PostVideoCoinDTO(
+                orderId,
+                nkid,
+                userId,
+                coinNum
+        );
         TransactionSendResult result = videoCoinExtRocketMQTemplate.sendMessageInTransaction(
             "video-coin-topic",
             MessageBuilder.withPayload(dto).build(),
