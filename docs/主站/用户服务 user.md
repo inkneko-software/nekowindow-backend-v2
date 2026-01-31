@@ -51,18 +51,8 @@ CREATE TABLE user_detail(
     fans INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '粉丝数量',
     subscribes INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '关注数量',
     coins INT NOT NULL DEFAULT 0 COMMENT '硬币数',
+    last_login DATETIME NOT NULL DEFAULT '1970-01-01' COMMENT '上次登录时间',
     UNIQUE(username)
-)ENGINE=InnoDB DEFAULT CHARSET utf8mb4;
-```
-
-### 每日登录奖励记录表
-
-```sql
-CREATE TABLE daily_bonus_record(
-	uid BIGINT NOT NULL,
-    coins INT NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX(uid)
 )ENGINE=InnoDB DEFAULT CHARSET utf8mb4;
 ```
 
@@ -88,5 +78,39 @@ CREATE TABLE private_message(
     content VARCHAR(500) NOT NULL DEFAULT '' COMMENT '内容',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+)ENGINE=InnoDB DEFAULT CHARSET utf8mb4;
+```
+
+### 投币订单表
+
+用于投币事务的幂等性ID
+
+```sql
+CREATE TABLE coin_order(
+  orderId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '记录ID'
+)ENGINE=InnoDB DEFAULT CHARSET utf8mb4;
+```
+
+### 硬币流水表
+
+记录用户的硬币变更历史
+
+业务类型见下表：
+
+| 业务类型 | 业务id | 业务描述 |
+| - | - | - |
+| LOGIN_BONUS | 用户ID| 登录奖励 |
+| VIDEO_COIN | 视频ID | 视频投币 |
+
+```sql
+CREATE TABLE coin_history(
+  id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '记录ID',
+  uid BIGINT NOT NULL COMMENT '用户id',
+  num INT NOT NULL COMMENT '硬币变更数量',
+  biz_id BIGINT NOT NULL DEFAULT 0 COMMENT '业务id',
+  biz_type VARCHAR(255) NOT NULL DEFAULT '' COMMENT '业务类型',
+  biz_key BIGINT NOT NULL DEFAULT 0 COMMENT '业务幂等ID',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(biz_key)
 )ENGINE=InnoDB DEFAULT CHARSET utf8mb4;
 ```

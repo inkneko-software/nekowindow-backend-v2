@@ -165,3 +165,18 @@ INSERT INTO partition_recommend_tag (partition_id, tag_name) values
 (5, "Minecraft"),
 (5, "Earth:Online");
 ```
+
+
+### 视频投币记录表
+
+```sql
+CREATE TABLE video_coin_record(
+  id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT 'id',
+  uid BIGINT NOT NULL COMMENT '用户id',
+  nkid BIGINT NOT NULL COMMENT '视频id',
+  num TINYINT NOT NULL COMMENT '投币数量',
+  order_id BIGINT NOT NULL COMMENT '订单id',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+)ENGINE=InnoDB DEFAULT CHARSET utf8mb4;
+```
+
