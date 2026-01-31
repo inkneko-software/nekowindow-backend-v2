@@ -29,6 +29,15 @@ public class VideoPostBriefVO {
     private Long visit;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    private Integer shared;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    private Long likes;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    private Long coin;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private UploadUserVO uploader;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
@@ -53,6 +62,9 @@ public class VideoPostBriefVO {
         this.coverUrl = videoPost.getCoverUrl();
         this.duration = videoPost.getDuration();
         this.visit = videoPost.getVisit();
+        this.likes = videoPost.getLikes();
+        this.coin = videoPost.getCoin();
+        this.shared = videoPost.getShared();
         this.partitionId = videoPost.getPartitionId();
         this.partitionName = videoPost.getPartitionName();
         this.createdAt = videoPost.getCreatedAt();

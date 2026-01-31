@@ -30,6 +30,12 @@ public class UserUploadedVideoStatisticsVO {
     Long visit;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    Long likes;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    Long coin;
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     Integer shared;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
@@ -63,6 +69,8 @@ public class UserUploadedVideoStatisticsVO {
         this.duration = videoPost.getDuration();
         this.visit = videoPost.getVisit();
         this.shared = videoPost.getShared();
+        this.likes = videoPost.getLikes();
+        this.coin = videoPost.getCoin();
         this.description = videoPost.getDescription();
         this.state = videoPost.getState();
         this.tags = tags;
