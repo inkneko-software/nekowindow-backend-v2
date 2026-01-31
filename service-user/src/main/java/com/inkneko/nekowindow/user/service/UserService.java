@@ -117,4 +117,11 @@ public interface UserService {
      */
     List<UserDetailVO> getUserFollowerList(Long userId, Integer page, Integer size);
 
+    /**
+     * 投币
+     * @param userId 用户ID
+     * @param nkid nkid
+     * @param num 投币数量
+     */
+    void postVideoCoin(Long userId, Long nkid, Integer num);
 }

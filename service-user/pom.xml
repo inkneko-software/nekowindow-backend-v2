@@ -34,6 +34,11 @@
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
+            <groupId>com.inkneko.nekowindow.api.video</groupId>
+            <artifactId>api-video</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
             <groupId>com.inkneko.nekowindow</groupId>
             <artifactId>common-service-core</artifactId>
             <version>0.0.1-SNAPSHOT</version>
@@ -44,5 +49,17 @@
             <version>0.0.1-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.inkneko.nekowindow.api.mq</groupId>
+            <artifactId>api-mq</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.rocketmq</groupId>
+            <artifactId>rocketmq-spring-boot-starter</artifactId>
+            <version>2.2.2</version>
+        </dependency>
+
     </dependencies>
 </project>

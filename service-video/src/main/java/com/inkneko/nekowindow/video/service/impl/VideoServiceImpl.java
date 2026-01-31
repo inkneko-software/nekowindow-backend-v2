@@ -26,8 +26,15 @@ import com.inkneko.nekowindow.video.permission.state.VideoPostState;
 import com.inkneko.nekowindow.video.service.VideoService;
 import com.inkneko.nekowindow.video.vo.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.rocketmq.spring.annotation.RocketMQTransactionListener;
+import org.apache.rocketmq.spring.core.RocketMQLocalTransactionListener;
+import org.apache.rocketmq.spring.core.RocketMQLocalTransactionState;
+import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.redisson.api.*;
 import org.springframework.beans.factory.BeanInitializationException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +57,7 @@ public class VideoServiceImpl implements VideoService {
     VideoPostResourceMapper videoPostResourceMapper;
     PartitionInfoMapper partitionInfoMapper;
     PartitionRecommendTagMapper partitionRecommendTagMapper;
+    VideoCoinRecordMapper videoCoinRecordMapper;
     PostTagMapper postTagMapper;
     OssEndpointConfig ossEndpointConfig;
     EncodeFeignClient encodeFeignClient;
@@ -64,6 +72,7 @@ public class VideoServiceImpl implements VideoService {
             UserFeignClient userFeignClient,
             PartitionInfoMapper partitionInfoMapper,
             PartitionRecommendTagMapper partitionRecommendTagMapper,
+            VideoCoinRecordMapper videoCoinRecordMapper,
             PostTagMapper postTagMapper,
             VideoPostResourceMapper videoPostResourceMapper,
             OssEndpointConfig ossEndpointConfig,
@@ -75,6 +84,7 @@ public class VideoServiceImpl implements VideoService {
         this.partitionInfoMapper = partitionInfoMapper;
         this.userFeignClient = userFeignClient;
         this.partitionRecommendTagMapper = partitionRecommendTagMapper;
+        this.videoCoinRecordMapper = videoCoinRecordMapper;
         this.postTagMapper = postTagMapper;
         this.videoPostResourceMapper = videoPostResourceMapper;
         this.ossEndpointConfig = ossEndpointConfig;

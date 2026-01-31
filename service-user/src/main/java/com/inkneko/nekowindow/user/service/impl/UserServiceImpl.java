@@ -4,15 +4,16 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.inkneko.nekowindow.api.auth.client.AuthClient;
 import com.inkneko.nekowindow.api.auth.vo.AuthVo;
+import com.inkneko.nekowindow.api.video.client.VideoFeignClient;
+import com.inkneko.nekowindow.api.video.dto.VideoPostDTO;
 import com.inkneko.nekowindow.common.ServiceException;
 import com.inkneko.nekowindow.user.config.UserServiceConfig;
 import com.inkneko.nekowindow.user.dto.EmailLoginDTO;
 import com.inkneko.nekowindow.user.dto.EmailPasswordLoginDTO;
 import com.inkneko.nekowindow.user.dto.SendLoginEmailCodeDTO;
-import com.inkneko.nekowindow.user.entity.Relation;
-import com.inkneko.nekowindow.user.entity.UserCredential;
-import com.inkneko.nekowindow.user.entity.UserDetail;
+import com.inkneko.nekowindow.user.entity.*;
 import com.inkneko.nekowindow.user.mapper.*;
+import com.inkneko.nekowindow.user.mq.producer.VideoCoinProducer;
 import com.inkneko.nekowindow.user.service.UserService;
 import com.inkneko.nekowindow.user.util.AsyncMailSender;
 import com.inkneko.nekowindow.user.vo.DailyBonusVO;
@@ -21,6 +22,7 @@ import com.inkneko.nekowindow.user.vo.MyUserDetailVO;
 import com.inkneko.nekowindow.user.vo.UserDetailVO;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.redisson.api.RLock;
 import org.redisson.api.RMapCache;
 import org.redisson.api.RedissonClient;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -56,6 +58,10 @@ public class UserServiceImpl implements UserService {
     private final RMapCache<String, String> passwordResetEmailCodeMap;
 
     private final AuthClient authClient;
+    private final VideoFeignClient videoFeignClient;
+    private final VideoCoinProducer videoCoinProducer;
+    private final CoinHistoryMapper coinHistoryMapper;
+    private final CoinOrderMapper coinOrderMapper;
 
     public UserServiceImpl(
             AsyncMailSender asyncMailSender,
@@ -65,8 +71,12 @@ public class UserServiceImpl implements UserService {
             RedissonClient redissonClient,
             AuthClient authClient,
             RelationMapper relationMapper,
-            PrivateMessageMapper privateMessageMapper
-    ) {
+            PrivateMessageMapper privateMessageMapper,
+            VideoCoinProducer videoCoinProducer,
+            CoinHistoryMapper coinHistoryMapper,
+            CoinOrderMapper coinOrderMapper,
+            VideoFeignClient videoFeignClient
+            ) {
         this.asyncMailSender = asyncMailSender;
         this.secureRandom = new SecureRandom();
         this.userCredentialMapper = userCredentialMapper;
@@ -79,6 +89,10 @@ public class UserServiceImpl implements UserService {
         this.userServiceConfig = userServiceConfig;
         this.relationMapper = relationMapper;
         this.privateMessageMapper = privateMessageMapper;
+        this.videoCoinProducer = videoCoinProducer;
+        this.coinHistoryMapper = coinHistoryMapper;
+        this.coinOrderMapper = coinOrderMapper;
+        this.videoFeignClient = videoFeignClient;
     }
 
     private String genEmailCode() {
@@ -407,5 +421,42 @@ public class UserServiceImpl implements UserService {
             result.add(new UserDetailVO(targetUserDetail));
         }
         return result;
+    }
+
+    @Override
+    public void postVideoCoin(Long userId, Long nkid, Integer num) {
+        UserDetail userDetail = userDetailMapper.selectOne(Wrappers.<UserDetail>lambdaQuery().eq(UserDetail::getUid, userId));
+        if (userDetail == null) {
+            throw new ServiceException(400, "用户不存在");
+        }
+        if (userDetail.getCoins() < num) {
+            throw new ServiceException(400, "硬币余额不足");
+        }
+        if (num <= 0 || num > 2){
+            throw new ServiceException(400, "投币数量错误");
+        }
+
+        VideoPostDTO videoPostDTO =  videoFeignClient.getVideoPost(nkid, userId);
+        if (videoPostDTO == null) {
+            throw new ServiceException(400, "视频不存在");
+        }
+
+        List<CoinHistory> coinHistoryList = coinHistoryMapper.selectList(
+                Wrappers.<CoinHistory>lambdaQuery()
+                        .eq(CoinHistory::getUid, userId)
+                        .eq(CoinHistory::getBizId, nkid)
+                        .eq(CoinHistory::getBizType, "VIDEO")
+        );
+        int postedCoinNum = coinHistoryList.stream().mapToInt(CoinHistory::getNum).sum();
+        if (postedCoinNum >= 2){
+            throw new ServiceException(400, "已达投币上限");
+        }
+
+        CoinOrder coinOrder = new CoinOrder();
+        coinOrderMapper.insert(coinOrder);
+        boolean sendSuccess = videoCoinProducer.sendCoin(coinOrder.getOrderId(), userId, nkid, num);
+        if (!sendSuccess) {
+            throw new ServiceException(500, "内部服务错误，请稍后再试");
+        }
     }
 }

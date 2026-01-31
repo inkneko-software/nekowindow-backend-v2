@@ -175,4 +175,12 @@ public class UserController {
         return new Response<>("ok", ossFeignClient.genUploadUrl(new GenUploadUrlDTO("nekowindow", "upload/avatar/" + uploadKey)).getData().getUploadUrl());
 
     }
+
+    @PostMapping("/postVideoCoin")
+    @Operation(summary = "视频投币")
+    public Response<?> postVideoCoin(@Validated @RequestBody PostVideoCoinDTO dto) {
+        Long uid = GatewayAuthUtils.auth();
+        userService.postVideoCoin(uid, dto.getNkid(), dto.getCoinNum());
+        return new Response<>("投币成功");
+    }
 }
