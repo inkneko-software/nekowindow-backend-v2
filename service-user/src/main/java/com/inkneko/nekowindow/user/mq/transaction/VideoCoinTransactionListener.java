@@ -91,7 +91,8 @@ public class VideoCoinTransactionListener implements RocketMQLocalTransactionLis
             // 未达上限则插入数据库
             coinHistory = new CoinHistory();
             coinHistory.setUid(dto.getUserId());
-            coinHistory.setNum(dto.getCoinNum());
+            // 硬币支出
+            coinHistory.setNum(-dto.getCoinNum());
             coinHistory.setBizId(dto.getNkid());
             coinHistory.setBizType("VIDEO");
             coinHistory.setBizKey(dto.getOrderId());

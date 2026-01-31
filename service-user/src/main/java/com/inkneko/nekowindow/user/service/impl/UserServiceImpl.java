@@ -447,8 +447,9 @@ public class UserServiceImpl implements UserService {
                         .eq(CoinHistory::getBizId, nkid)
                         .eq(CoinHistory::getBizType, "VIDEO")
         );
+        // 已投币量为硬币支出，单视频达到投币上限时，对该视频的硬币变更数应该是-2
         int postedCoinNum = coinHistoryList.stream().mapToInt(CoinHistory::getNum).sum();
-        if (postedCoinNum >= 2){
+        if (postedCoinNum <= -2){
             throw new ServiceException(400, "已达投币上限");
         }
 
