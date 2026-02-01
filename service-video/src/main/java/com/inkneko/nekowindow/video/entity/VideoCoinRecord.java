@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class VideoCoinRecord {
-    private Long videoCoinId;
+    private Long id;
     private Long uid;
     private Long nkid;
     private Integer num;
