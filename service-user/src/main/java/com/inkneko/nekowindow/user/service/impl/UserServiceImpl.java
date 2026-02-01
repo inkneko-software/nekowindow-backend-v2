@@ -417,7 +417,7 @@ public class UserServiceImpl implements UserService {
         );
         List<UserDetailVO> result = new ArrayList<>();
         for (Relation userRelation : userRelationList) {
-            UserDetail targetUserDetail = userDetailMapper.selectById(userRelation.getTargetUid());
+            UserDetail targetUserDetail = userDetailMapper.selectById(userRelation.getFollowerUid());
             result.add(new UserDetailVO(targetUserDetail));
         }
         return result;
