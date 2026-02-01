@@ -59,7 +59,13 @@ public class VideoPostDetailVO {
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private Date createdAt;
 
-    public VideoPostDetailVO(VideoPost videoPost, UploadUserVO uploader, List<VideoPostResourceVO> videos, List<String> tags) {
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    private Boolean isLiked;
+
+    @Schema(description = "已投币数量", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Integer postedCoins;
+
+    public VideoPostDetailVO(VideoPost videoPost, UploadUserVO uploader, List<VideoPostResourceVO> videos, List<String> tags, Boolean isLiked, Integer postedCoins) {
         this.nkid = videoPost.getNkid();
         this.title = videoPost.getTitle();
         this.description = videoPost.getDescription();
@@ -75,6 +81,8 @@ public class VideoPostDetailVO {
         this.uploader = uploader;  // 由外部提供的 UploadUserVO 对象
         this.videos = videos;      // 由外部提供的视频资源列表
         this.tags = tags;          // 由外部提供的标签列表
+        this.isLiked = isLiked;
+        this.postedCoins = postedCoins;
     }
 
 }

@@ -308,8 +308,17 @@ public class VideoServiceImpl implements VideoService {
         List<String> tags = postTagMapper.selectList(new LambdaQueryWrapper<PostTag>().eq(PostTag::getNkid, nkid))
                 .stream().map(PostTag::getTagName).toList();
 
+        //TODO: 查询是否点赞
 
-        return new VideoPostDetailVO(videoPost, uploadUserVO, postResourceVOs, tags);
+        // 查询是否已投币
+        List<VideoCoinRecord> videoCoinRecords = videoCoinRecordMapper.selectList(
+                Wrappers.<VideoCoinRecord>lambdaQuery()
+                .eq(VideoCoinRecord::getUid, viewerUserId)
+                .eq(VideoCoinRecord::getNkid, videoPost.getNkid())
+        );
+        int postedCoins = videoCoinRecords.stream().mapToInt(VideoCoinRecord::getNum).sum();
+
+        return new VideoPostDetailVO(videoPost, uploadUserVO, postResourceVOs, tags, false, postedCoins);
     }
 
     @Override
