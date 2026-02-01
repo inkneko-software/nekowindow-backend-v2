@@ -31,6 +31,7 @@ public class CollectionController {
     @GetMapping("/getCollectionGroups")
     @Operation(summary = "获取用户收藏夹列表")
     public Response<List<CollectionGroupVO>> getCollectionGroups(@RequestParam(required = false) Long userId/*, @RequestParam(defaultValue = "1") Integer page, @RequestParam(defaultValue = '') Integer pageSize*/) {
+        // 如果userId为空，则获取当前登录用户的收藏夹
         Long currentUserId = null;
         if (userId == null) {
             currentUserId = GatewayAuthUtils.auth(true);
