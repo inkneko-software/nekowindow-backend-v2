@@ -17,10 +17,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -182,5 +186,35 @@ public class UserController {
         Long uid = GatewayAuthUtils.auth();
         userService.postVideoCoin(uid, dto.getNkid(), dto.getCoinNum());
         return new Response<>("投币成功");
+    }
+
+    @PostMapping("/subscribe")
+    @Operation(summary = "关注用户")
+    public Response<?> subscribe(@RequestParam Long targetUserId) {
+        Long uid = GatewayAuthUtils.auth();
+        userService.subscribeUser(uid, targetUserId);
+        return new Response<>("关注成功");
+    }
+
+    @PostMapping("/unsubscribe")
+    @Operation(summary = "取消关注")
+    public Response<?> unsubscribe(@RequestParam Long targetUserId) {
+        Long uid = GatewayAuthUtils.auth();
+        userService.unsubscribeUser(uid, targetUserId);
+        return new Response<>("取消关注成功");
+    }
+
+    @GetMapping("/getUserSubscribeList")
+    @Operation(summary = "获取用户关注列表")
+    public Response<List<UserDetailVO>> getUserSubscribeList(@Validated @ParameterObject GetUserSubscribeListDTO dto) {
+        List<UserDetailVO> userList =  userService.getUserSubscribeList(dto.getUid(), dto.getPage(), dto.getPageSize());
+        return new Response<>("ok", userList);
+    }
+
+    @GetMapping("/getUserFollowerList")
+    @Operation(summary = "获取用户粉丝列表")
+    public Response<List<UserDetailVO>> getUserFollowerList(@Validated @ParameterObject GetUserFollowerListDTO dto) {
+        List<UserDetailVO> userList =  userService.getUserFollowerList(dto.getUid(), dto.getPage(), dto.getPageSize());
+        return new Response<>("ok", userList);
     }
 }
