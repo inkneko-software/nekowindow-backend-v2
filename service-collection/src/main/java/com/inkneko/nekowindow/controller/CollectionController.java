@@ -35,10 +35,10 @@ public class CollectionController {
         Long currentUserId = null;
         if (userId == null) {
             currentUserId = GatewayAuthUtils.auth(true);
+            userId = currentUserId;
         } else {
             currentUserId = GatewayAuthUtils.auth(false);
         }
-        userId = currentUserId;
         return new Response<>("ok", collectionService.getCollectionGroupsByUserId(userId, currentUserId));
     }
 
