@@ -6,9 +6,17 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
+
 @FeignClient(value = "nekowindow-service-user")
 public interface UserFeignClient {
 
     @GetMapping("/internal/user/{userId}")
     UserVo get(@PathVariable Long userId);
+
+    @GetMapping("/internal/user/getSubscribeList")
+    List<UserVo> getSubscribeList(@RequestParam Long userId);
+
+    @GetMapping("/internal/user/getFanList")
+    List<UserVo> getFanList(@RequestParam Long userId);
 }
