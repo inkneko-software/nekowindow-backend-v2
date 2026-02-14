@@ -16,6 +16,7 @@ import com.inkneko.nekowindow.video.dto.CreateVideoPostDTO;
 import com.inkneko.nekowindow.video.dto.UpdatePostBriefDTO;
 import com.inkneko.nekowindow.video.entity.*;
 import com.inkneko.nekowindow.video.mapper.*;
+import com.inkneko.nekowindow.video.mq.producer.VideoPostCreatedProducer;
 import com.inkneko.nekowindow.video.permission.policy.VideoPostResourceVisibilityPolicy;
 import com.inkneko.nekowindow.video.permission.policy.VideoPostVisibilityPolicy;
 import com.inkneko.nekowindow.video.permission.query.VideoPostQueryHelper;
@@ -53,6 +54,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class VideoServiceImpl implements VideoService {
 
+    private final VideoPostCreatedProducer videoPostCreatedProducer;
     VideoPostMapper videoPostMapper;
     VideoPostResourceMapper videoPostResourceMapper;
     PartitionInfoMapper partitionInfoMapper;
@@ -77,8 +79,8 @@ public class VideoServiceImpl implements VideoService {
             VideoPostResourceMapper videoPostResourceMapper,
             OssEndpointConfig ossEndpointConfig,
             EncodeFeignClient encodeFeignClient,
-            RedissonClient redissonClient
-    ) {
+            RedissonClient redissonClient,
+            VideoPostCreatedProducer videoPostCreatedProducer) {
         this.videoPostMapper = videoPostMapper;
         this.ossFeignClient = ossFeignClient;
         this.partitionInfoMapper = partitionInfoMapper;
@@ -96,6 +98,7 @@ public class VideoServiceImpl implements VideoService {
         } catch (Exception e) {
             throw new BeanInitializationException("OSS Endpoint配置的URI格式错误", e);
         }
+        this.videoPostCreatedProducer = videoPostCreatedProducer;
     }
 
     /**
@@ -313,8 +316,8 @@ public class VideoServiceImpl implements VideoService {
         // 查询是否已投币
         List<VideoCoinRecord> videoCoinRecords = videoCoinRecordMapper.selectList(
                 Wrappers.<VideoCoinRecord>lambdaQuery()
-                .eq(VideoCoinRecord::getUid, viewerUserId)
-                .eq(VideoCoinRecord::getNkid, videoPost.getNkid())
+                        .eq(VideoCoinRecord::getUid, viewerUserId)
+                        .eq(VideoCoinRecord::getNkid, videoPost.getNkid())
         );
         int postedCoins = videoCoinRecords.stream().mapToInt(VideoCoinRecord::getNum).sum();
 
@@ -478,14 +481,27 @@ public class VideoServiceImpl implements VideoService {
             // 更新数据库中的记录
             videoPostResourceMapper.updateById(videoPostResource);
 
-            // 更新视频的总时长
-            List<VideoPostResource> resources = videoPostResourceMapper.selectList(new LambdaQueryWrapper<VideoPostResource>().eq(VideoPostResource::getNkid, videoPostResource.getNkid()));
-            Integer totalDuration = resources.stream().mapToInt(VideoPostResource::getDuration).sum();
-            VideoPost videoPost = videoPostMapper.selectById(videoPostResource.getNkid());
-            if (videoPost != null) {
-                videoPost.setDuration(totalDuration);
-                videoPostMapper.updateById(videoPost);
+            // 如果转换成功，则更新视频的时长
+            if (dto.getConvertState() == 3) {
+
+                // 更新视频的总时长
+                List<VideoPostResource> resources = videoPostResourceMapper.selectList(new LambdaQueryWrapper<VideoPostResource>().eq(VideoPostResource::getNkid, videoPostResource.getNkid()));
+                Integer totalDuration = resources.stream().mapToInt(VideoPostResource::getDuration).sum();
+                VideoPost videoPost = videoPostMapper.selectById(videoPostResource.getNkid());
+                if (videoPost != null) {
+                    videoPost.setDuration(totalDuration);
+                    // 如果是第一个视频且当前状态处于审核中，则暂时跳过审核，直接转为公开访问
+                    if (resources.get(0).getVideoId().equals(dto.getVideoId())) {
+                        if (videoPost.getState().equals(VideoPostState.REVIEWING.getCode())) {
+                            videoPost.setState(VideoPostState.NORMAL.getCode());
+                        }
+                    }
+                    videoPostMapper.updateById(videoPost);
+                    // 通知视频投稿创建完成
+                    videoPostCreatedProducer.send(videoPost);
+                }
             }
+
         }
 
     }
